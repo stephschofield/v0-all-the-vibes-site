@@ -16,14 +16,14 @@ export default function DesktopIcon({ animateFrom }: DesktopIconProps) {
   return (
     <button
       onClick={restoreWindow}
-      className="fixed top-6 left-6 z-50 flex flex-col items-center gap-2 p-3 rounded-xl transition-all duration-300 hover:bg-white/10 hover:scale-105 active:scale-95 group cursor-pointer"
+      className="fixed top-6 left-6 z-50 flex flex-col items-center gap-2.5 p-3.5 rounded-xl transition-all duration-300 hover:bg-white/10 hover:scale-105 active:scale-95 group cursor-pointer leading-7"
       style={{
         animation: animateFrom ? 'iconAppear 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards' : undefined,
       }}
     >
       {/* App Icon */}
       <div 
-        className="w-16 h-16 rounded-2xl flex items-center justify-center overflow-hidden transition-transform group-hover:shadow-lg"
+        className="w-[74px] h-[74px] rounded-2xl flex items-center justify-center overflow-hidden transition-transform group-hover:shadow-lg"
         style={{
           background: 'linear-gradient(135deg, rgba(30, 30, 40, 0.9) 0%, rgba(20, 20, 30, 0.95) 100%)',
           border: '1px solid rgba(255, 255, 255, 0.1)',
@@ -33,18 +33,18 @@ export default function DesktopIcon({ animateFrom }: DesktopIconProps) {
         <img 
           src="/images/atv-logo.svg" 
           alt="All The Vibes" 
-          className="w-12 h-12 object-contain"
+          className="w-[68px] h-[68px] object-contain"
         />
       </div>
       
       {/* App Label */}
       <span 
-        className="text-xs font-medium text-center px-1 py-0.5 rounded"
+        className="text-sm font-medium text-center px-1.5 py-0.5 rounded"
         style={{
-          fontFamily: 'var(--font-display)',
+          fontFamily: 'Arial, Helvetica, sans-serif',
           color: 'var(--text-primary)',
           textShadow: '0 1px 2px rgba(0, 0, 0, 0.5)',
-          maxWidth: '80px',
+          maxWidth: '92px',
         }}
       >
         All The Vibes

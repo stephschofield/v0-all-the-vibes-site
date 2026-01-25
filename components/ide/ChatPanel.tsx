@@ -272,22 +272,7 @@ export default function ChatPanel({ dynamicWidth }: ChatPanelProps) {
           background: 'rgba(0, 0, 0, 0.2)',
         }}
       >
-        <button 
-          className="flex items-center gap-1.5 text-[10px] hover:opacity-80 transition-opacity"
-          style={{ 
-            color: 'var(--accent-pink)',
-            fontFamily: 'var(--font-display)',
-          }}
-        >
-          <CopilotIcon size={12} />
-          Copilot Proxy
-        </button>
-        <button 
-          className="p-1 rounded hover:bg-white/5 transition-colors"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          <ZoomIn size={12} />
-        </button>
+        
         {/* GitHub Copilot Logo */}
         <img 
           src="/images/ghcp-logo.png" 
@@ -295,12 +280,6 @@ export default function ChatPanel({ dynamicWidth }: ChatPanelProps) {
           className="h-3 w-auto opacity-70 hover:opacity-100 transition-opacity cursor-pointer"
           style={{ filter: 'invert(1)' }}
         />
-        <button 
-          className="p-1 rounded hover:bg-white/5 transition-colors"
-          style={{ color: 'var(--text-muted)' }}
-        >
-          <Users size={12} />
-        </button>
         <button 
           className="p-1 rounded hover:bg-white/5 transition-colors"
           style={{ color: 'var(--text-muted)' }}
