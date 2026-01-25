@@ -57,6 +57,9 @@ next-env.d.ts
 *.sublime-workspace
 *.sublime-project
 
+# Local tools
+/.beads
+
 # OS files
 .DS_Store
 .DS_Store?
