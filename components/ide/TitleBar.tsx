@@ -1,6 +1,6 @@
 "use client"
 
-import { Minus, Square, X, Zap } from "lucide-react"
+import { Minus, Square, X, Zap, PanelLeft, PanelRight, Columns2 } from "lucide-react"
 import { useIDE } from "./IDEContext"
 
 const menus = ["File", "Edit", "View", "Terminal"]
@@ -17,34 +17,6 @@ export default function TitleBar() {
         borderBottom: '1px solid var(--ide-border)',
       }}
     >
-      {/* Traffic Lights (macOS style) */}
-      <div className="flex gap-2 group">
-        <button 
-          onClick={closeWindow}
-          className="w-3.5 h-3.5 rounded-full flex items-center justify-center transition-all hover:brightness-110 active:scale-90"
-          style={{ backgroundColor: '#FF5F57' }}
-          title="Close"
-        >
-          <X size={10} className="opacity-0 group-hover:opacity-60 transition-opacity text-black/80" />
-        </button>
-        <button 
-          onClick={minimizeWindow}
-          className="w-3.5 h-3.5 rounded-full flex items-center justify-center transition-all hover:brightness-110 active:scale-90"
-          style={{ backgroundColor: '#FFBD2E' }}
-          title={windowState === 'fullscreen' ? 'Exit fullscreen' : 'Minimize'}
-        >
-          <Minus size={10} className="opacity-0 group-hover:opacity-60 transition-opacity text-black/80" />
-        </button>
-        <button 
-          onClick={maximizeWindow}
-          className="w-3.5 h-3.5 rounded-full flex items-center justify-center transition-all hover:brightness-110 active:scale-90"
-          style={{ backgroundColor: '#28C840' }}
-          title="Fullscreen"
-        >
-          <Square size={8} className="opacity-0 group-hover:opacity-60 transition-opacity text-black/80" />
-        </button>
-      </div>
-      
       {/* App Title */}
       <div className="flex items-center gap-2">
         <Zap size={16} className="text-[var(--accent-yellow)]" />
@@ -99,6 +71,58 @@ export default function TitleBar() {
             {shortcut}
           </span>
         ))}
+      </div>
+
+      {/* VS Code style window controls */}
+      <div className="flex items-center">
+        {/* Panel toggle buttons */}
+        <button 
+          className="w-11 h-8 flex items-center justify-center transition-colors hover:bg-white/10"
+          style={{ color: 'var(--text-muted)' }}
+          title="Toggle Primary Side Bar"
+        >
+          <PanelLeft size={16} />
+        </button>
+        <button 
+          className="w-11 h-8 flex items-center justify-center transition-colors hover:bg-white/10"
+          style={{ color: 'var(--text-muted)' }}
+          title="Toggle Panel"
+        >
+          <Columns2 size={16} />
+        </button>
+        <button 
+          className="w-11 h-8 flex items-center justify-center transition-colors hover:bg-white/10"
+          style={{ color: 'var(--text-muted)' }}
+          title="Toggle Secondary Side Bar"
+        >
+          <PanelRight size={16} />
+        </button>
+        
+        {/* Window controls */}
+        <button 
+          onClick={minimizeWindow}
+          className="w-11 h-8 flex items-center justify-center transition-colors hover:bg-white/10"
+          style={{ color: 'var(--text-muted)' }}
+          title={windowState === 'fullscreen' ? 'Exit fullscreen' : 'Minimize'}
+        >
+          <Minus size={16} />
+        </button>
+        <button 
+          onClick={maximizeWindow}
+          className="w-11 h-8 flex items-center justify-center transition-colors hover:bg-white/10"
+          style={{ color: 'var(--text-muted)' }}
+          title="Maximize"
+        >
+          <Square size={14} />
+        </button>
+        <button 
+          onClick={closeWindow}
+          className="w-11 h-8 flex items-center justify-center transition-colors hover:bg-[#e81123]"
+          style={{ color: 'var(--text-muted)' }}
+          title="Close"
+        >
+          <X size={16} />
+        </button>
       </div>
     </div>
   )
