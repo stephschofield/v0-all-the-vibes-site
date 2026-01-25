@@ -6,9 +6,11 @@ import { useState, useEffect } from "react"
 import { Terminal, Wifi, Battery, Flame } from "lucide-react"
 
 export default function TerminalStrip() {
-  const [time, setTime] = useState(new Date())
+  const [time, setTime] = useState<Date | null>(null)
 
   useEffect(() => {
+    // Set initial time after mount
+    setTime(new Date())
     const interval = setInterval(() => setTime(new Date()), 1000)
     return () => clearInterval(interval)
   }, [])
@@ -40,12 +42,12 @@ export default function TerminalStrip() {
           <span>87%</span>
         </TerminalItem>
         <TerminalItem className="tabular-nums">
-          {time.toLocaleTimeString('en-US', { 
+          {time ? time.toLocaleTimeString('en-US', { 
             hour: '2-digit', 
             minute: '2-digit',
             second: '2-digit',
             hour12: false 
-          })}
+          }) : '--:--:--'}
         </TerminalItem>
         <div 
           className="flex items-center gap-1.5"
