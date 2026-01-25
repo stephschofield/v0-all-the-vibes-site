@@ -68,7 +68,7 @@ function UpcomingEventsLayout() {
 
   return (
     <div 
-      className="flex flex-col h-full"
+      className="flex flex-col flex-1 overflow-hidden"
       style={{ background: 'var(--ide-bg)' }}
     >
       {/* Simple Browser - Takes 80% of height */}

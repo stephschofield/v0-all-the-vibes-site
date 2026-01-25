@@ -32,6 +32,15 @@ export default function OSBackground({ children }: OSBackgroundProps) {
         }}
       />
       
+      {/* Centered ATV Logo - visible when IDE is minimized/closed */}
+      <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+        <img 
+          src="/images/atv-logo-black.svg" 
+          alt="All The Vibes" 
+          className="w-[300px] md:w-[400px] lg:w-[500px] h-auto opacity-90"
+        />
+      </div>
+      
       {/* IDE Container */}
       {children}
     </div>
