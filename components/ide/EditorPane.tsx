@@ -5,6 +5,7 @@ import { useIDE } from "./IDEContext"
 import MarkdownSection from "../editor/MarkdownSection"
 import SimpleBrowser from "../editor/SimpleBrowser"
 import EventCard from "../editor/EventCard"
+import { CalendarEvent } from "@/types/event"
 
 export default function EditorPane() {
   const { activeFile } = useIDE()
@@ -65,6 +66,74 @@ export default function EditorPane() {
 
 function UpcomingEventsLayout() {
   const techConnectDate = new Date('2026-02-10T10:00:00-08:00')
+  const techConnectEndDate = new Date('2026-02-10T18:00:00-08:00')
+
+  // Calendar event data for downloads
+  const techConnectCalendarEvent: CalendarEvent = {
+    id: 'tech-connect-2026',
+    title: 'All The Vibes @ Tech Connect',
+    description: 'The biggest vibe coding event of the year. Join us for hands-on workshops, lightning talks, live coding sessions, and community networking.',
+    location: 'Redmond, WA',
+    url: 'https://allthevibes.dev/events/tech-connect-2026',
+    startDate: techConnectDate,
+    endDate: techConnectEndDate,
+    organizer: {
+      name: 'All The Vibes Team',
+      email: 'events@allthevibes.dev',
+    },
+    reminder: 1440, // 24 hours before
+  }
+
+  // For recurring events, we'll use the next occurrence
+  const getNextTuesday = () => {
+    const now = new Date()
+    const day = now.getDay()
+    const daysUntilTuesday = (2 - day + 7) % 7 || 7
+    const nextTuesday = new Date(now)
+    nextTuesday.setDate(now.getDate() + daysUntilTuesday)
+    nextTuesday.setHours(10, 0, 0, 0) // 10 AM CT
+    return nextTuesday
+  }
+
+  const getNextFriday = () => {
+    const now = new Date()
+    const day = now.getDay()
+    const daysUntilFriday = (5 - day + 7) % 7 || 7
+    const nextFriday = new Date(now)
+    nextFriday.setDate(now.getDate() + daysUntilFriday)
+    nextFriday.setHours(11, 0, 0, 0) // 11 AM CT
+    return nextFriday
+  }
+
+  const hackAndFuriousStart = getNextTuesday()
+  const hackAndFuriousEnd = new Date(hackAndFuriousStart)
+  hackAndFuriousEnd.setHours(11, 0, 0, 0)
+
+  const hackAndFuriousCalendarEvent: CalendarEvent = {
+    id: 'hack-and-furious',
+    title: 'Hack and Furious Call',
+    description: 'Weekly coding sessions, show and tell, and sharing learnings with the All The Vibes community.',
+    location: 'Virtual - Discord',
+    url: 'https://allthevibes.dev/hack-and-furious',
+    startDate: hackAndFuriousStart,
+    endDate: hackAndFuriousEnd,
+    reminder: 30,
+  }
+
+  const communityCallStart = getNextFriday()
+  const communityCallEnd = new Date(communityCallStart)
+  communityCallEnd.setHours(12, 0, 0, 0)
+
+  const communityCallCalendarEvent: CalendarEvent = {
+    id: 'community-call',
+    title: 'All The Vibes Community Call',
+    description: 'Weekly community meeting, demos, and open forum. Everyone is welcome!',
+    location: 'Virtual - Discord',
+    url: 'https://allthevibes.dev/community-call',
+    startDate: communityCallStart,
+    endDate: communityCallEnd,
+    reminder: 30,
+  }
 
   return (
     <div 
@@ -108,6 +177,7 @@ function UpcomingEventsLayout() {
               accentColor="var(--accent-cyan)"
               showCountdown={true}
               targetDate={techConnectDate}
+              calendarEvent={techConnectCalendarEvent}
             />
 
             {/* Recurring Events */}
@@ -120,6 +190,7 @@ function UpcomingEventsLayout() {
               accentColor="var(--accent-pink)"
               isRecurring={true}
               recurringPattern="Every Tuesday"
+              calendarEvent={hackAndFuriousCalendarEvent}
             />
 
             <EventCard
@@ -131,6 +202,7 @@ function UpcomingEventsLayout() {
               accentColor="var(--accent-yellow)"
               isRecurring={true}
               recurringPattern="Every Friday"
+              calendarEvent={communityCallCalendarEvent}
             />
           </div>
         </SimpleBrowser>

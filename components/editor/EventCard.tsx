@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from "react"
 import { Calendar, Clock, MapPin, Users, Repeat } from "lucide-react"
+import { CalendarEvent } from "@/types/event"
+import { AddToCalendarButton } from "@/components/AddToCalendarButton"
 
 interface EventCardProps {
   title: string
@@ -15,6 +17,7 @@ interface EventCardProps {
   recurringPattern?: string
   targetDate?: Date
   showCountdown?: boolean
+  calendarEvent?: CalendarEvent
 }
 
 export default function EventCard({
@@ -29,6 +32,7 @@ export default function EventCard({
   recurringPattern,
   targetDate,
   showCountdown = false,
+  calendarEvent,
 }: EventCardProps) {
   const [countdown, setCountdown] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 })
 
@@ -120,6 +124,13 @@ export default function EventCard({
             </p>
           )}
         </div>
+        
+        {/* Add to Calendar Button */}
+        {calendarEvent && (
+          <div className="flex-shrink-0">
+            <AddToCalendarButton event={calendarEvent} variant="ghost" size="sm" />
+          </div>
+        )}
       </div>
 
       {/* Event Details */}
