@@ -14,12 +14,17 @@ Last updated: January 25, 2026
 | Project assessment | CORRECTED: Full VS Code-style IDE UI exists for "All The Vibes Community" |
 | Fix sparse checkout | Disabled git sparse-checkout that was hiding code |
 | Add to Calendar feature | .ics download, Google Calendar, Outlook integration for events |
+| Topic Requests Feature | Renamed speaker-signup.py to topic-requests.py, word cloud display, Supabase integration, removed AI/semantic search |
 
 ---
 
 ## In Progress
 
-*Nothing currently in progress.*
+---
+
+## On Hold
+
+- [ ] **Real calendar event data** — Replace hardcoded events with actual calendar data from user's Microsoft Calendar (.ics export)
 
 ---
 
@@ -34,7 +39,7 @@ Last updated: January 25, 2026
 
 ### Medium Priority (P2) — Feature Enhancement
 
-- [ ] **Real content integration** — Replace hardcoded event data with CMS or API
+- [ ] **Additional real content integration** — CMS or API for non-calendar content
 - [ ] **Working terminal** — TerminalStrip.tsx exists but may need real functionality
 - [ ] **Functional file navigation** — Sidebar clicks should update editor content
 - [ ] **Chat panel functionality** — ChatPanel.tsx needs actual AI integration or mock

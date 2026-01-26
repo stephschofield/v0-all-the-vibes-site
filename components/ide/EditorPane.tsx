@@ -5,6 +5,8 @@ import { useIDE } from "./IDEContext"
 import MarkdownSection from "../editor/MarkdownSection"
 import SimpleBrowser from "../editor/SimpleBrowser"
 import EventCard from "../editor/EventCard"
+import { TopicSubmissionForm } from "../TopicSubmissionForm"
+import { TopicWordCloud } from "../TopicWordCloud"
 import { CalendarEvent } from "@/types/event"
 
 export default function EditorPane() {
@@ -13,6 +15,11 @@ export default function EditorPane() {
   // Upcoming events gets special split layout
   if (activeFile === 'upcoming-events.py') {
     return <UpcomingEventsLayout />
+  }
+
+  // Topic requests gets the topic submission form
+  if (activeFile === 'topic-requests.py') {
+    return <TopicRequestsLayout />
   }
 
   const lineCount = 45
@@ -55,7 +62,6 @@ export default function EditorPane() {
         {activeFile === 'welcome.md' && <WelcomeContent />}
         {activeFile === 'schedule.py' && <PlaceholderContent filename={activeFile} />}
         {activeFile === 'vibe-a-thon.py' && <PlaceholderContent filename={activeFile} />}
-        {activeFile === 'speaker-signup.md' && <PlaceholderContent filename={activeFile} />}
         {activeFile === 'sponsor-info.md' && <PlaceholderContent filename={activeFile} />}
         {activeFile === 'sponsors.yaml' && <PlaceholderContent filename={activeFile} />}
         {activeFile === 'tickets.config.js' && <PlaceholderContent filename={activeFile} />}
@@ -297,6 +303,145 @@ function UpcomingEventsCode() {
       </CodeLine>
       <CodeLine>
         <SyntaxSpan type="punctuation">{']'}</SyntaxSpan>
+      </CodeLine>
+    </div>
+  )
+}
+
+function TopicRequestsLayout() {
+  return (
+    <div 
+      className="flex flex-col flex-1 overflow-hidden"
+      style={{ background: 'var(--ide-bg)' }}
+    >
+      {/* Simple Browser - Takes 80% of height */}
+      <div className="flex-1 p-2" style={{ height: '80%', minHeight: 0 }}>
+        <SimpleBrowser showBrowserTab={false}>
+          <div className="p-4 sm:p-8 overflow-auto h-full ide-scrollable">
+            {/* Page Header */}
+            <div className="text-center mb-8">
+              <h1 
+                className="text-3xl font-bold mb-3"
+                style={{ 
+                  fontFamily: 'var(--font-display)',
+                  color: 'var(--text-primary)',
+                }}
+              >
+                Submit a Topic
+              </h1>
+              <p 
+                className="text-base"
+                style={{ 
+                  color: 'var(--text-muted)',
+                  fontFamily: 'var(--font-display)',
+                }}
+              >
+                What would you like us to cover in our weekly calls?
+              </p>
+              <p 
+                className="text-sm mt-2"
+                style={{ 
+                  color: 'var(--text-muted)',
+                  fontFamily: 'var(--font-display)',
+                }}
+              >
+                All submissions are anonymous
+              </p>
+            </div>
+
+            {/* Side-by-side layout: Form + Word Cloud */}
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
+              {/* Topic Submission Form */}
+              <div>
+                <TopicSubmissionForm anonymous={true} embedded={true} />
+              </div>
+              
+              {/* Word Cloud of submitted topics */}
+              <div>
+                <TopicWordCloud />
+              </div>
+            </div>
+          </div>
+        </SimpleBrowser>
+      </div>
+
+      {/* Code Pane - Takes 20% of height */}
+      <div 
+        className="flex overflow-auto ide-scrollable"
+        style={{
+          height: '20%',
+          minHeight: '120px',
+          borderTop: '1px solid var(--ide-border)',
+          fontFamily: 'var(--font-mono)',
+          fontSize: 'var(--text-base)',
+          lineHeight: '1.75',
+        }}
+      >
+        {/* Line Numbers Gutter */}
+        <div 
+          className="hidden sm:flex flex-col flex-shrink-0 py-2 select-none"
+          style={{
+            width: '50px',
+            background: 'rgba(255, 255, 255, 0.02)',
+            borderRight: '1px solid var(--ide-border)',
+          }}
+        >
+          {Array.from({ length: 12 }, (_, i) => (
+            <span 
+              key={i} 
+              className="h-[20px] pr-4 text-right"
+              style={{
+                fontSize: 'var(--text-xs)',
+                color: 'var(--text-muted)',
+              }}
+            >
+              {i + 1}
+            </span>
+          ))}
+        </div>
+        
+        {/* Code Content */}
+        <div className="flex-1 p-2 sm:p-3 overflow-auto ide-scrollable">
+          <TopicRequestsCode />
+        </div>
+      </div>
+    </div>
+  )
+}
+
+function TopicRequestsCode() {
+  return (
+    <div style={{ fontSize: '12px', lineHeight: '20px' }}>
+      <CodeLine><SyntaxSpan type="comment">{'# topic-requests.py'}</SyntaxSpan></CodeLine>
+      <CodeLine><SyntaxSpan type="comment">{'# Anonymous topic submission for community calls'}</SyntaxSpan></CodeLine>
+      <CodeLine empty />
+      <CodeLine>
+        <SyntaxSpan type="keyword">from</SyntaxSpan>
+        <SyntaxSpan type="punctuation">{' supabase '}</SyntaxSpan>
+        <SyntaxSpan type="keyword">import</SyntaxSpan>
+        <SyntaxSpan type="punctuation">{' create_client'}</SyntaxSpan>
+      </CodeLine>
+      <CodeLine empty />
+      <CodeLine>
+        <SyntaxSpan type="keyword">def</SyntaxSpan>
+        <SyntaxSpan type="punctuation">{' '}</SyntaxSpan>
+        <SyntaxSpan type="variable">submit_topic</SyntaxSpan>
+        <SyntaxSpan type="punctuation">{'(topic, description, priority):'}</SyntaxSpan>
+      </CodeLine>
+      <CodeLine indent={1}>
+        <SyntaxSpan type="variable">supabase</SyntaxSpan>
+        <SyntaxSpan type="punctuation">{'.table('}</SyntaxSpan>
+        <SyntaxSpan type="string">{'"topic_requests"'}</SyntaxSpan>
+        <SyntaxSpan type="punctuation">{').insert({'}</SyntaxSpan>
+      </CodeLine>
+      <CodeLine indent={2}>
+        <SyntaxSpan type="string">{'"topic"'}</SyntaxSpan>
+        <SyntaxSpan type="punctuation">{': topic, '}</SyntaxSpan>
+        <SyntaxSpan type="string">{'"description"'}</SyntaxSpan>
+        <SyntaxSpan type="punctuation">{': description'}</SyntaxSpan>
+      </CodeLine>
+      <CodeLine indent={1}>
+        <SyntaxSpan type="punctuation">{'})'}</SyntaxSpan>
       </CodeLine>
     </div>
   )

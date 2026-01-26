@@ -24,7 +24,7 @@ const fileTree: FileItem[] = [
       { name: 'upcoming-events.py', type: 'python' },
       { name: 'schedule.py', type: 'python' },
       { name: 'vibe-a-thon.py', type: 'python' },
-      { name: 'speaker-signup.md', type: 'markdown' },
+      { name: 'topic-requests.py', type: 'python' },
       { name: 'sponsor-info.md', type: 'markdown' },
       { name: 'sponsors.yaml', type: 'yaml' },
       { name: 'tickets.config.js', type: 'javascript' },
