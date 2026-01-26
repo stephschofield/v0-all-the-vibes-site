@@ -91,7 +91,14 @@ export default function IDEWindow() {
         </div>
         
         {/* Resize handle for sidebar */}
-        <ResizeHandle onResize={handleSidebarResize} direction="right" />
+        <ResizeHandle 
+          onResize={handleSidebarResize} 
+          direction="right"
+          currentWidth={sidebarWidth}
+          minWidth={150}
+          maxWidth={400}
+          label="Resize sidebar"
+        />
         
         {/* Editor pane */}
         <div className="flex flex-col flex-1 overflow-hidden min-w-0">
@@ -100,7 +107,14 @@ export default function IDEWindow() {
         </div>
         
         {/* Resize handle for chat */}
-        <ResizeHandle onResize={handleChatResize} direction="left" />
+        <ResizeHandle 
+          onResize={handleChatResize} 
+          direction="left"
+          currentWidth={chatWidth}
+          minWidth={250}
+          maxWidth={500}
+          label="Resize chat panel"
+        />
         
         {/* Chat panel with dynamic width */}
         <div 

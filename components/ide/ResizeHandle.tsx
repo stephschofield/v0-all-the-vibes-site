@@ -7,9 +7,23 @@ import { useCallback, useEffect, useState } from "react"
 interface ResizeHandleProps {
   onResize: (delta: number) => void
   direction: 'left' | 'right'
+  currentWidth: number
+  minWidth: number
+  maxWidth: number
+  label?: string
 }
 
-export default function ResizeHandle({ onResize, direction }: ResizeHandleProps) {
+const SMALL_STEP = 10
+const LARGE_STEP = 50
+
+export default function ResizeHandle({ 
+  onResize, 
+  direction, 
+  currentWidth,
+  minWidth,
+  maxWidth,
+  label = "Resize panel"
+}: ResizeHandleProps) {
   const [isDragging, setIsDragging] = useState(false)
   const [startX, setStartX] = useState(0)
 
@@ -18,6 +32,29 @@ export default function ResizeHandle({ onResize, direction }: ResizeHandleProps)
     setIsDragging(true)
     setStartX(e.clientX)
   }, [])
+
+  const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+    const step = e.shiftKey ? LARGE_STEP : SMALL_STEP
+    
+    switch (e.key) {
+      case 'ArrowLeft':
+        e.preventDefault()
+        onResize(direction === 'right' ? -step : step)
+        break
+      case 'ArrowRight':
+        e.preventDefault()
+        onResize(direction === 'right' ? step : -step)
+        break
+      case 'Home':
+        e.preventDefault()
+        onResize(minWidth - currentWidth)
+        break
+      case 'End':
+        e.preventDefault()
+        onResize(maxWidth - currentWidth)
+        break
+    }
+  }, [onResize, direction, currentWidth, minWidth, maxWidth])
 
   useEffect(() => {
     if (!isDragging) return
@@ -43,9 +80,17 @@ export default function ResizeHandle({ onResize, direction }: ResizeHandleProps)
 
   return (
     <div
-      className={`relative flex-shrink-0 group cursor-col-resize ${isDragging ? 'z-50' : 'z-20'}`}
+      role="separator"
+      aria-orientation="vertical"
+      aria-label={label}
+      aria-valuenow={currentWidth}
+      aria-valuemin={minWidth}
+      aria-valuemax={maxWidth}
+      tabIndex={0}
+      className={`relative flex-shrink-0 group cursor-col-resize focus:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent-blue)] focus-visible:ring-offset-1 focus-visible:ring-offset-[var(--ide-bg)] ${isDragging ? 'z-50' : 'z-20'}`}
       style={{ width: '4px' }}
       onMouseDown={handleMouseDown}
+      onKeyDown={handleKeyDown}
     >
       {/* Invisible wider hit area */}
       <div 

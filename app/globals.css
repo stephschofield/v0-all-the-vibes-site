@@ -339,3 +339,31 @@
 .window-restoring {
   animation: windowRestore 0.4s cubic-bezier(0.34, 1.56, 0.64, 1) forwards;
 }
+
+/* ===========================================
+   Focus Indicators - WCAG 2.4.7 Compliance
+   =========================================== */
+
+/* Visible focus indicators for keyboard navigation */
+button:focus-visible,
+[role="tab"]:focus-visible,
+[role="treeitem"]:focus-visible,
+input:focus-visible,
+textarea:focus-visible,
+select:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--accent-blue);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* Remove default outline for mouse users */
+button:focus:not(:focus-visible),
+[role="tab"]:focus:not(:focus-visible),
+[role="treeitem"]:focus:not(:focus-visible),
+input:focus:not(:focus-visible),
+textarea:focus:not(:focus-visible),
+select:focus:not(:focus-visible),
+a:focus:not(:focus-visible) {
+  outline: none;
+}

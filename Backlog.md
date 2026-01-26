@@ -2,7 +2,7 @@
 
 > *"I don't have time to explain things twice. Read this."*
 
-Last updated: January 25, 2026
+Last updated: January 26, 2026
 
 ---
 
@@ -16,6 +16,14 @@ Last updated: January 25, 2026
 | Add to Calendar feature | .ics download, Google Calendar, Outlook integration for events |
 | Topic Requests Feature | Renamed speaker-signup.py to topic-requests.py, word cloud display, Supabase integration, removed AI/semantic search |
 | DSPy Topic Modeling | Python service + scripts using Ollama llama3.2 for topic analysis |
+| Fix TypeScript errors | Removed `ignoreBuildErrors`, build passes with 0 errors |
+| Configure ESLint | Created eslint.config.mjs with flat config, found 5 warnings (unused imports, img tags) |
+| Add error boundaries | Created app/error.tsx and app/topics/error.tsx with VS Code styling |
+| Accessibility audit | Found 23 issues: 4 critical, 8 high, 6 medium, 5 low |
+| Add focus indicators | Global CSS with :focus-visible for keyboard navigation (WCAG 2.4.7) |
+| Keyboard nav in file tree | Arrow keys, Enter/Space, ARIA tree semantics in Sidebar.tsx (WCAG 2.1.1, 4.1.2) |
+| Tab semantics in TabBar | role="tablist", arrow key navigation, roving tabindex (WCAG 4.1.2) |
+| ResizeHandle keyboard support | Arrow keys, Home/End, Shift modifiers for panel resizing (WCAG 2.1.1) |
 
 ---
 
@@ -31,12 +39,15 @@ Last updated: January 25, 2026
 
 ## Backlog (Prioritized)
 
-### High Priority (P1) — Technical Debt
+### High Priority (P1) — Accessibility & Code Quality
 
-- [ ] **Fix TypeScript errors** — `ignoreBuildErrors: true` is hiding problems. Audit and fix all TS issues.
-- [ ] **Configure ESLint** — package.json has lint script but no eslint config exists
-- [ ] **Add error boundaries** — No error.tsx for graceful error handling
-- [ ] **Accessibility audit** — VS Code-style UI needs keyboard navigation, ARIA labels, screen reader support
+- [ ] **ARIA labels on icon buttons** — ChatPanel, TitleBar buttons need accessible names (8 instances)
+- [ ] **File tree ARIA semantics** — Add role="tree", aria-expanded to Sidebar
+- [ ] **Menu bar semantics** — TitleBar menu needs role="menubar", role="menuitem"
+- [ ] **Chat input label** — Missing accessible label for screen readers
+- [ ] **Tab close button labels** — X icons need aria-label
+- [ ] **Fix ESLint warnings** — 5 warnings: unused imports, replace img with next/image
+- [ ] **Color contrast improvements** — Muted text and comments below 4.5:1 ratio
 
 ### Medium Priority (P2) — Feature Enhancement
 
@@ -121,15 +132,14 @@ Fully functional VS Code-themed community site for "All The Vibes Community" —
 
 **Technical Debt:**
 
-- TypeScript errors hidden by `ignoreBuildErrors: true`
-- No ESLint configuration
-- No error boundaries
-- Accessibility not audited
+- 7 high-priority accessibility improvements remaining (ARIA labels, semantics)
+- 5 ESLint warnings (unused imports, img vs next/image)
+- Color contrast ratios below standards (muted text, comments)
 
 **What's Coming:**
 
-1. Fix TypeScript strictness
-2. Accessibility audit
+1. Critical accessibility fixes (keyboard nav, focus indicators)
+2. High-priority ARIA improvements
 3. Real content integration
 
 **Blockers:** None.

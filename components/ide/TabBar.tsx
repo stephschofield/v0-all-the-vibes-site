@@ -2,6 +2,7 @@
 
 import { X, FileText, FileCode } from "lucide-react"
 import { useIDE } from "./IDEContext"
+import { useRef, useCallback, KeyboardEvent } from "react"
 
 const tabs = [
   { name: 'welcome.md', icon: 'markdown' },
@@ -25,11 +26,21 @@ interface TabProps {
   icon: string
   onClick: () => void
   active: boolean
+  onKeyDown: (e: KeyboardEvent<HTMLButtonElement>) => void
+  tabRef: (el: HTMLButtonElement | null) => void
 }
 
-function Tab({ name, icon, onClick, active }: TabProps) {
+function Tab({ name, icon, onClick, active, onKeyDown, tabRef }: TabProps) {
+  // Generate panel ID from filename (for aria-controls)
+  const panelId = `panel-${name.replace(/\./g, '-')}`
+  
   return (
     <button 
+      ref={tabRef}
+      role="tab"
+      aria-selected={active}
+      aria-controls={panelId}
+      tabIndex={active ? 0 : -1}
       className={`group flex items-center gap-2 h-9 px-4 relative transition-all duration-100 hover:-translate-y-[1px] ${
         active 
           ? 'bg-[var(--ide-bg)] text-[var(--text-primary)]' 
@@ -43,6 +54,7 @@ function Tab({ name, icon, onClick, active }: TabProps) {
         fontWeight: 500,
       }}
       onClick={onClick}
+      onKeyDown={onKeyDown}
     >
       {active && (
         <span 
@@ -55,7 +67,14 @@ function Tab({ name, icon, onClick, active }: TabProps) {
       </span>
       <span className="whitespace-nowrap">{name}</span>
       <span 
+        role="button"
+        aria-label={`Close ${name}`}
+        tabIndex={-1}
         className="flex items-center p-0.5 rounded opacity-0 group-hover:opacity-50 hover:!opacity-100 hover:bg-white/10 transition-all"
+        onClick={(e) => {
+          e.stopPropagation()
+          // Close functionality would go here
+        }}
       >
         <X size={14} />
       </span>
@@ -65,6 +84,39 @@ function Tab({ name, icon, onClick, active }: TabProps) {
 
 export default function TabBar() {
   const { activeFile, setActiveFile } = useIDE()
+  const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
+  
+  const handleKeyDown = useCallback((e: KeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+    const tabCount = tabs.length
+    let newIndex: number | null = null
+    
+    switch (e.key) {
+      case 'ArrowRight':
+        e.preventDefault()
+        // Move to next tab, wrap around to first
+        newIndex = (currentIndex + 1) % tabCount
+        break
+      case 'ArrowLeft':
+        e.preventDefault()
+        // Move to previous tab, wrap around to last
+        newIndex = (currentIndex - 1 + tabCount) % tabCount
+        break
+      case 'Home':
+        e.preventDefault()
+        newIndex = 0
+        break
+      case 'End':
+        e.preventDefault()
+        newIndex = tabCount - 1
+        break
+    }
+    
+    if (newIndex !== null) {
+      const newTab = tabs[newIndex]
+      setActiveFile(newTab.name)
+      tabRefs.current[newIndex]?.focus()
+    }
+  }, [setActiveFile])
   
   return (
     <div 
@@ -75,13 +127,19 @@ export default function TabBar() {
         borderBottom: '1px solid var(--ide-border)',
       }}
     >
-      <div className="flex items-end min-w-min">
-        {tabs.map(tab => (
+      <div 
+        role="tablist"
+        aria-label="Open files"
+        className="flex items-end min-w-min"
+      >
+        {tabs.map((tab, index) => (
           <Tab 
             key={tab.name} 
             {...tab} 
             active={tab.name === activeFile}
             onClick={() => setActiveFile(tab.name)}
+            onKeyDown={(e) => handleKeyDown(e, index)}
+            tabRef={(el) => { tabRefs.current[index] = el }}
           />
         ))}
       </div>
