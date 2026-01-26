@@ -41,17 +41,19 @@ export function useCalendarDownload() {
    * Generates Outlook Web URL
    */
   const getOutlookWebUrl = useCallback((event: CalendarEvent): string => {
+    const formatOutlookDate = (date: Date) => {
+      return date.toISOString();
+    };
+    
     const params = new URLSearchParams({
-      path: '/calendar/action/compose',
-      rru: 'addevent',
       subject: event.title,
-      startdt: event.startDate.toISOString(),
-      enddt: event.endDate.toISOString(),
+      startdt: formatOutlookDate(event.startDate),
+      enddt: formatOutlookDate(event.endDate),
       body: event.description || '',
       location: event.location || '',
     });
     
-    return `https://outlook.live.com/calendar/0/deeplink/compose?${params.toString()}`;
+    return `https://outlook.live.com/calendar/0/action/compose?${params.toString()}`;
   }, []);
   
   return {
