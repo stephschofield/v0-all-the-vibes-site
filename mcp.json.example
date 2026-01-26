@@ -1,0 +1,9 @@
+{
+  "$schema": "https://code.visualstudio.com/docs/copilot/chat/mcp-servers",
+  "servers": {
+    "shadcn": {
+      "command": "npx",
+      "args": ["shadcn@3.7.0", "mcp"]
+    }
+  }
+}
