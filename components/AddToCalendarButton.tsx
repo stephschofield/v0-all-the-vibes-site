@@ -101,11 +101,12 @@ export function AddToCalendarButton({
           className="
             absolute right-0 top-full mt-2 w-56 z-50
             border rounded-lg
-            shadow-xl shadow-black/30
+            shadow-xl shadow-black/50
             overflow-hidden
+            backdrop-blur-none
           "
           style={{
-            background: 'var(--ide-sidebar-bg)',
+            background: '#1e1e1e',
             borderColor: 'var(--ide-border)',
           }}
         >
@@ -115,7 +116,7 @@ export function AddToCalendarButton({
             onClick={handleDownloadICS}
             className="
               w-full flex items-center gap-3 px-3 py-2.5
-              text-left hover:bg-white/5
+              text-left hover:bg-[#2a2d2e]
               transition-colors border-b
             "
             style={{ 
@@ -141,7 +142,7 @@ export function AddToCalendarButton({
             onClick={handleGoogleCalendar}
             className="
               w-full flex items-center gap-3 px-3 py-2.5
-              text-left hover:bg-white/5
+              text-left hover:bg-[#2a2d2e]
               transition-colors
             "
             style={{ 
@@ -172,7 +173,7 @@ export function AddToCalendarButton({
             onClick={handleOutlookWeb}
             className="
               w-full flex items-center gap-3 px-3 py-2.5
-              text-left hover:bg-white/5
+              text-left hover:bg-[#2a2d2e]
               transition-colors
             "
             style={{ 
@@ -198,7 +199,7 @@ export function AddToCalendarButton({
           <div 
             className="px-3 py-2 border-t"
             style={{ 
-              background: 'rgba(255, 255, 255, 0.02)',
+              background: '#252526',
               borderColor: 'var(--ide-border)',
             }}
           >
