@@ -15,6 +15,7 @@ Last updated: January 25, 2026
 | Fix sparse checkout | Disabled git sparse-checkout that was hiding code |
 | Add to Calendar feature | .ics download, Google Calendar, Outlook integration for events |
 | Topic Requests Feature | Renamed speaker-signup.py to topic-requests.py, word cloud display, Supabase integration, removed AI/semantic search |
+| DSPy Topic Modeling | Python service + scripts using Ollama llama3.2 for topic analysis |
 
 ---
 

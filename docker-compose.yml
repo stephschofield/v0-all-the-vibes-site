@@ -6,11 +6,28 @@ services:
     environment:
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/vibes
       - OLLAMA_URL=http://ollama:11434
+      - TOPIC_MODELING_URL=http://topic-modeling:8000
     depends_on:
       db:
         condition: service_healthy
       ollama:
         condition: service_started
+
+  topic-modeling:
+    build: ./services/topic-modeling
+    ports:
+      - "8000:8000"
+    environment:
+      - OLLAMA_URL=http://ollama:11434
+      - OLLAMA_MODEL=llama3.2
+    depends_on:
+      ollama:
+        condition: service_started
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
 
   db:
     image: pgvector/pgvector:pg16

@@ -1,6 +1,6 @@
 'use server';
 
-import { supabase } from '@/lib/db';
+import { getSupabase } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 
 export type TopicSubmission = {
@@ -31,6 +31,7 @@ export async function submitTopic(formData: FormData): Promise<SubmitResult> {
   }
 
   try {
+    const supabase = getSupabase();
     const { data, error } = await supabase
       .from('topic_requests')
       .insert({
@@ -55,6 +56,7 @@ export async function submitTopic(formData: FormData): Promise<SubmitResult> {
 
 export async function getTopics(): Promise<TopicSubmission[]> {
   try {
+    const supabase = getSupabase();
     const { data, error } = await supabase
       .from('topic_requests')
       .select('id, name, email, topic, description, priority, created_at')
@@ -70,6 +72,7 @@ export async function getTopics(): Promise<TopicSubmission[]> {
 
 export async function getTopicWords(): Promise<{ word: string; count: number }[]> {
   try {
+    const supabase = getSupabase();
     const { data, error } = await supabase
       .from('topic_requests')
       .select('topic');
