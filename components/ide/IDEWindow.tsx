@@ -17,6 +17,7 @@ export default function IDEWindow() {
   const [sidebarWidth, setSidebarWidth] = useState(220)
   const [chatWidth, setChatWidth] = useState(320)
   const [terminalOpen, setTerminalOpen] = useState(true)
+  const [terminalHeight, setTerminalHeight] = useState(200)
 
   const handleSidebarResize = useCallback((delta: number) => {
     setSidebarWidth(prev => Math.max(150, Math.min(400, prev + delta)))
@@ -24,6 +25,10 @@ export default function IDEWindow() {
 
   const handleChatResize = useCallback((delta: number) => {
     setChatWidth(prev => Math.max(250, Math.min(500, prev + delta)))
+  }, [])
+
+  const handleTerminalResize = useCallback((delta: number) => {
+    setTerminalHeight(prev => Math.max(100, Math.min(500, prev + delta)))
   }, [])
 
   // Don't render if window is closed or minimized (and not animating)
@@ -127,7 +132,12 @@ export default function IDEWindow() {
         </div>
       </div>
       <StatusBar />
-      <TerminalPanel isOpen={terminalOpen} onClose={() => setTerminalOpen(false)} />
+      <TerminalPanel 
+        isOpen={terminalOpen} 
+        onClose={() => setTerminalOpen(false)} 
+        height={terminalHeight}
+        onResize={handleTerminalResize}
+      />
       <TerminalStrip isTerminalOpen={terminalOpen} onToggleTerminal={() => setTerminalOpen(v => !v)} />
     </div>
   )

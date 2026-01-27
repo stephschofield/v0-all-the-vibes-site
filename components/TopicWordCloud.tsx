@@ -132,25 +132,23 @@ export function TopicWordCloud() {
       }}
     >
       {/* Header with toggle */}
-      <div className="flex items-center justify-between mb-4">
-        <div>
-          <h3 
-            className="text-lg font-semibold"
-            style={{ color: 'var(--text-primary)' }}
-          >
-            What the community wants to learn
-          </h3>
-          <p 
-            className="text-sm"
-            style={{ color: 'var(--text-muted)' }}
-          >
-            {topicCount} submission{topicCount !== 1 ? 's' : ''}
-          </p>
-        </div>
+      <div className="mb-4 text-center">
+        <h3 
+          className="text-lg font-semibold"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          What the community wants to learn
+        </h3>
+        <p 
+          className="text-sm mb-3"
+          style={{ color: 'var(--text-muted)' }}
+        >
+          {topicCount} submission{topicCount !== 1 ? 's' : ''}
+        </p>
         
         {/* Toggle buttons */}
         <div 
-          className="flex rounded-lg overflow-hidden"
+          className="inline-flex rounded-lg overflow-hidden"
           style={{ border: '1px solid var(--ide-border)' }}
         >
           <button
@@ -161,7 +159,7 @@ export function TopicWordCloud() {
               color: viewMode === 'themes' ? 'white' : 'var(--text-muted)',
             }}
           >
-            🎯 Themes
+            Themes
           </button>
           <button
             onClick={() => setViewMode('raw')}
@@ -172,7 +170,7 @@ export function TopicWordCloud() {
               borderLeft: '1px solid var(--ide-border)',
             }}
           >
-            📝 Raw
+            Raw
           </button>
         </div>
       </div>

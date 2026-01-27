@@ -86,14 +86,18 @@ function ansi256ToHex(code: number): string {
 interface TerminalPanelProps {
   isOpen: boolean
   onClose: () => void
+  height: number
+  onResize: (delta: number) => void
 }
 
-export default function TerminalPanel({ isOpen, onClose }: TerminalPanelProps) {
+export default function TerminalPanel({ isOpen, onClose, height, onResize }: TerminalPanelProps) {
   const [commandRun, setCommandRun] = useState(false)
   const [displayedLines, setDisplayedLines] = useState<string[]>([])
   const [cursorVisible, setCursorVisible] = useState(true)
   const [isTyping, setIsTyping] = useState(false)
+  const [isResizing, setIsResizing] = useState(false)
   const terminalRef = useRef<HTMLDivElement>(null)
+  const resizeRef = useRef<{ startY: number; startHeight: number } | null>(null)
   
   const command = "npx @vibes/cli init"
   
@@ -104,6 +108,36 @@ export default function TerminalPanel({ isOpen, onClose }: TerminalPanelProps) {
       return () => clearInterval(interval)
     }
   }, [commandRun])
+  
+  // Resize handlers
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsResizing(true)
+    resizeRef.current = { startY: e.clientY, startHeight: height }
+  }, [height])
+  
+  useEffect(() => {
+    if (!isResizing) return
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!resizeRef.current) return
+      const delta = resizeRef.current.startY - e.clientY
+      onResize(delta)
+    }
+    
+    const handleMouseUp = () => {
+      setIsResizing(false)
+      resizeRef.current = null
+    }
+    
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+    
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isResizing, onResize])
   
   // Typewriter effect for banner
   const runCommand = useCallback(() => {
@@ -157,13 +191,25 @@ export default function TerminalPanel({ isOpen, onClose }: TerminalPanelProps) {
   
   return (
     <div 
-      className="flex flex-col overflow-hidden"
+      className="flex flex-col overflow-hidden relative"
       style={{
-        height: '280px',
+        height: `${height}px`,
         background: 'rgba(15, 15, 18, 0.98)',
         borderTop: '1px solid var(--ide-border)',
       }}
     >
+      {/* Resize handle */}
+      <div
+        className="absolute top-0 left-0 right-0 h-1 cursor-ns-resize z-20 flex items-center justify-center group"
+        onMouseDown={handleResizeStart}
+        style={{ marginTop: '-2px' }}
+      >
+        <div 
+          className="w-10 h-1 rounded-full transition-colors group-hover:bg-[var(--accent-blue)]"
+          style={{ background: isResizing ? 'var(--accent-blue)' : 'var(--ide-border)' }}
+        />
+      </div>
+      
       {/* Terminal header */}
       <div 
         className="flex items-center justify-between px-3 flex-shrink-0"
