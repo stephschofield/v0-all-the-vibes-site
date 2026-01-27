@@ -80,19 +80,20 @@ export function TopicWordCloud() {
   if (loading) {
     return (
       <div 
-        className="h-full flex items-center justify-center p-6 rounded-lg"
+        className="h-full flex items-center justify-center p-4 rounded-lg"
         style={{ 
           background: 'rgba(0,0,0,0.2)', 
-          border: '1px solid var(--ide-border)' 
+          border: '1px solid var(--ide-border)',
+          maxHeight: '280px',
         }}
       >
         <div className="text-center">
-          <div className="animate-pulse mb-2">
+          <div className="animate-pulse mb-1">
             <span style={{ color: 'var(--accent-cyan)' }}>●</span>
             <span style={{ color: 'var(--accent-pink)' }} className="mx-1">●</span>
             <span style={{ color: 'var(--accent-yellow)' }}>●</span>
           </div>
-          <p style={{ color: 'var(--text-muted)' }}>Analyzing topics with AI...</p>
+          <p className="text-xs" style={{ color: 'var(--text-muted)' }}>Analyzing topics...</p>
         </div>
       </div>
     );
@@ -101,20 +102,21 @@ export function TopicWordCloud() {
   if (themes.length === 0 && topicCount === 0 && rawTopics.length === 0) {
     return (
       <div 
-        className="h-full flex flex-col items-center justify-center p-6 rounded-lg text-center"
+        className="h-full flex flex-col items-center justify-center p-4 rounded-lg text-center"
         style={{ 
           background: 'rgba(0,0,0,0.2)', 
-          border: '1px solid var(--ide-border)' 
+          border: '1px solid var(--ide-border)',
+          maxHeight: '280px',
         }}
       >
         <p 
-          className="text-lg font-medium mb-2"
+          className="text-sm font-medium mb-1"
           style={{ color: 'var(--text-primary)' }}
         >
           No topics yet
         </p>
         <p 
-          className="text-sm"
+          className="text-xs"
           style={{ color: 'var(--text-muted)' }}
         >
           Be the first to submit a topic!
@@ -125,22 +127,24 @@ export function TopicWordCloud() {
 
   return (
     <div 
-      className="p-6 rounded-lg"
+      className="p-4 rounded-lg flex flex-col"
       style={{ 
         background: 'rgba(0,0,0,0.2)', 
-        border: '1px solid var(--ide-border)' 
+        border: '1px solid var(--ide-border)',
+        height: '100%',
+        maxHeight: '280px',
       }}
     >
       {/* Header with toggle */}
-      <div className="mb-4 text-center">
+      <div className="mb-3 text-center flex-shrink-0">
         <h3 
-          className="text-lg font-semibold"
+          className="text-sm font-semibold"
           style={{ color: 'var(--text-primary)' }}
         >
           What the community wants to learn
         </h3>
         <p 
-          className="text-sm mb-3"
+          className="text-xs mb-2"
           style={{ color: 'var(--text-muted)' }}
         >
           {topicCount} submission{topicCount !== 1 ? 's' : ''}
@@ -148,12 +152,12 @@ export function TopicWordCloud() {
         
         {/* Toggle buttons */}
         <div 
-          className="inline-flex rounded-lg overflow-hidden"
+          className="inline-flex rounded-md overflow-hidden"
           style={{ border: '1px solid var(--ide-border)' }}
         >
           <button
             onClick={() => setViewMode('themes')}
-            className="px-3 py-1.5 text-sm font-medium transition-colors"
+            className="px-2 py-1 text-xs font-medium transition-colors"
             style={{
               background: viewMode === 'themes' ? 'var(--accent-blue)' : 'transparent',
               color: viewMode === 'themes' ? 'white' : 'var(--text-muted)',
@@ -163,7 +167,7 @@ export function TopicWordCloud() {
           </button>
           <button
             onClick={() => setViewMode('raw')}
-            className="px-3 py-1.5 text-sm font-medium transition-colors"
+            className="px-2 py-1 text-xs font-medium transition-colors"
             style={{
               background: viewMode === 'raw' ? 'var(--accent-blue)' : 'transparent',
               color: viewMode === 'raw' ? 'white' : 'var(--text-muted)',
@@ -175,12 +179,14 @@ export function TopicWordCloud() {
         </div>
       </div>
 
-      {/* Content based on view mode */}
-      {viewMode === 'themes' ? (
-        <ThemesView themes={themes} topicCount={topicCount} error={error} />
-      ) : (
-        <RawTopicsView topics={rawTopics} />
-      )}
+      {/* Content based on view mode - scrollable */}
+      <div className="flex-1 overflow-y-auto min-h-0">
+        {viewMode === 'themes' ? (
+          <ThemesView themes={themes} topicCount={topicCount} error={error} />
+        ) : (
+          <RawTopicsView topics={rawTopics} />
+        )}
+      </div>
     </div>
   );
 }
@@ -188,11 +194,11 @@ export function TopicWordCloud() {
 function ThemesView({ themes, topicCount, error }: { themes: Theme[]; topicCount: number; error: string | null }) {
   if (themes.length === 0) {
     return (
-      <p style={{ color: 'var(--text-muted)' }}>
+      <p className="text-sm" style={{ color: 'var(--text-muted)' }}>
         {topicCount > 0 ? (
           <>
             Analyzing themes...
-            {error && <span className="block text-sm mt-1" style={{ color: 'var(--accent-pink)' }}>
+            {error && <span className="block text-xs mt-1" style={{ color: 'var(--accent-pink)' }}>
               (Theme analysis unavailable: {error})
             </span>}
           </>
@@ -204,17 +210,17 @@ function ThemesView({ themes, topicCount, error }: { themes: Theme[]; topicCount
   }
 
   return (
-    <div className="flex flex-wrap gap-3">
+    <div className="flex flex-wrap gap-2">
       {themes.map((theme, index) => {
         const color = COLORS[index % COLORS.length];
         const relatedCount = theme.related_topics?.length || 1;
         const scale = Math.min(relatedCount / Math.max(topicCount, 1), 1);
-        const fontSize = 14 + (scale * 10);
+        const fontSize = 12 + (scale * 6);
         
         return (
           <div
             key={theme.name}
-            className="group relative px-3 py-2 rounded-lg transition-all hover:scale-105 cursor-default"
+            className="group relative px-2 py-1 rounded-md transition-all hover:scale-105 cursor-default"
             style={{
               background: `${color}20`,
               border: `1px solid ${color}40`,
@@ -233,13 +239,13 @@ function ThemesView({ themes, topicCount, error }: { themes: Theme[]; topicCount
             
             {/* Tooltip */}
             <div 
-              className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 w-64"
+              className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1.5 rounded-md opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 w-48"
               style={{
                 background: 'var(--ide-sidebar)',
                 border: '1px solid var(--ide-border)',
               }}
             >
-              <p className="text-sm" style={{ color: 'var(--text-primary)' }}>
+              <p className="text-xs" style={{ color: 'var(--text-primary)' }}>
                 {theme.description}
               </p>
               {theme.related_topics && theme.related_topics.length > 0 && (
@@ -263,7 +269,7 @@ function RawTopicsView({ topics }: { topics: TopicSubmission[] }) {
   }
 
   return (
-    <div className="space-y-3 max-h-96 overflow-y-auto pr-2">
+    <div className="space-y-2 pr-1">
       {topics.map((topic) => {
         const priorityColor = PRIORITY_COLORS[topic.priority] || PRIORITY_COLORS.medium;
         const date = new Date(topic.created_at);
@@ -272,21 +278,21 @@ function RawTopicsView({ topics }: { topics: TopicSubmission[] }) {
         return (
           <div
             key={topic.id}
-            className="p-3 rounded-lg"
+            className="p-2 rounded-md"
             style={{
               background: 'rgba(0,0,0,0.2)',
-              borderLeft: `3px solid ${priorityColor}`,
+              borderLeft: `2px solid ${priorityColor}`,
             }}
           >
             <div className="flex items-start justify-between gap-2">
               <p 
-                className="font-medium"
+                className="text-sm font-medium"
                 style={{ color: 'var(--text-primary)' }}
               >
                 {topic.topic}
               </p>
               <span 
-                className="text-xs px-2 py-0.5 rounded shrink-0"
+                className="text-xs px-1.5 py-0.5 rounded shrink-0"
                 style={{ 
                   background: `${priorityColor}30`,
                   color: priorityColor,
@@ -298,7 +304,7 @@ function RawTopicsView({ topics }: { topics: TopicSubmission[] }) {
             
             {topic.description && (
               <p 
-                className="text-sm mt-1"
+                className="text-xs mt-1 line-clamp-1"
                 style={{ color: 'var(--text-muted)' }}
               >
                 {topic.description}
@@ -306,7 +312,7 @@ function RawTopicsView({ topics }: { topics: TopicSubmission[] }) {
             )}
             
             <div 
-              className="flex items-center gap-2 mt-2 text-xs"
+              className="flex items-center gap-1 mt-1 text-xs"
               style={{ color: 'var(--text-muted)' }}
             >
               <span>{topic.name || 'Anonymous'}</span>

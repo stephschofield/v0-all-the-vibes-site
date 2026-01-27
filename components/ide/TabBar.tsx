@@ -4,15 +4,11 @@ import { X, FileText, FileCode } from "lucide-react"
 import { useIDE } from "./IDEContext"
 import { useRef, useCallback, KeyboardEvent } from "react"
 
-const tabs = [
-  { name: 'welcome.md', icon: 'markdown' },
-  { name: 'upcoming-events.py', icon: 'python' },
-  { name: 'schedule.py', icon: 'python' },
-]
-
 const iconMap: Record<string, { icon: typeof FileText, color: string }> = {
   markdown: { icon: FileText, color: '#4A9EFF' },
   python: { icon: FileCode, color: '#4ADE80' },
+  javascript: { icon: FileCode, color: '#F7DF1E' },
+  typescript: { icon: FileCode, color: '#3178C6' },
 }
 
 function TabIcon({ type }: { type: string }) {
@@ -25,12 +21,13 @@ interface TabProps {
   name: string
   icon: string
   onClick: () => void
+  onClose: () => void
   active: boolean
   onKeyDown: (e: KeyboardEvent<HTMLButtonElement>) => void
   tabRef: (el: HTMLButtonElement | null) => void
 }
 
-function Tab({ name, icon, onClick, active, onKeyDown, tabRef }: TabProps) {
+function Tab({ name, icon, onClick, onClose, active, onKeyDown, tabRef }: TabProps) {
   // Generate panel ID from filename (for aria-controls)
   const panelId = `panel-${name.replace(/\./g, '-')}`
   
@@ -73,7 +70,7 @@ function Tab({ name, icon, onClick, active, onKeyDown, tabRef }: TabProps) {
         className="flex items-center p-0.5 rounded opacity-0 group-hover:opacity-50 hover:!opacity-100 hover:bg-white/10 transition-all"
         onClick={(e) => {
           e.stopPropagation()
-          // Close functionality would go here
+          onClose()
         }}
       >
         <X size={14} />
@@ -83,11 +80,11 @@ function Tab({ name, icon, onClick, active, onKeyDown, tabRef }: TabProps) {
 }
 
 export default function TabBar() {
-  const { activeFile, setActiveFile } = useIDE()
+  const { activeFile, setActiveFile, openFiles, closeFile } = useIDE()
   const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
   
   const handleKeyDown = useCallback((e: KeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
-    const tabCount = tabs.length
+    const tabCount = openFiles.length
     let newIndex: number | null = null
     
     switch (e.key) {
@@ -111,12 +108,12 @@ export default function TabBar() {
         break
     }
     
-    if (newIndex !== null) {
-      const newTab = tabs[newIndex]
+    if (newIndex !== null && openFiles[newIndex]) {
+      const newTab = openFiles[newIndex]
       setActiveFile(newTab.name)
       tabRefs.current[newIndex]?.focus()
     }
-  }, [setActiveFile])
+  }, [setActiveFile, openFiles])
   
   return (
     <div 
@@ -132,12 +129,14 @@ export default function TabBar() {
         aria-label="Open files"
         className="flex items-end min-w-min"
       >
-        {tabs.map((tab, index) => (
+        {openFiles.map((tab, index) => (
           <Tab 
             key={tab.name} 
-            {...tab} 
+            name={tab.name}
+            icon={tab.icon}
             active={tab.name === activeFile}
             onClick={() => setActiveFile(tab.name)}
+            onClose={() => closeFile(tab.name)}
             onKeyDown={(e) => handleKeyDown(e, index)}
             tabRef={(el) => { tabRefs.current[index] = el }}
           />
