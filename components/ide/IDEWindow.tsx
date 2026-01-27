@@ -8,6 +8,7 @@ import TabBar from "./TabBar"
 import EditorPane from "./EditorPane"
 import StatusBar from "./StatusBar"
 import TerminalStrip from "./TerminalStrip"
+import TerminalPanel from "./TerminalPanel"
 import ChatPanel from "./ChatPanel"
 import ResizeHandle from "./ResizeHandle"
 
@@ -15,6 +16,7 @@ export default function IDEWindow() {
   const { windowState, animationState } = useIDE()
   const [sidebarWidth, setSidebarWidth] = useState(220)
   const [chatWidth, setChatWidth] = useState(320)
+  const [terminalOpen, setTerminalOpen] = useState(true)
 
   const handleSidebarResize = useCallback((delta: number) => {
     setSidebarWidth(prev => Math.max(150, Math.min(400, prev + delta)))
@@ -125,7 +127,8 @@ export default function IDEWindow() {
         </div>
       </div>
       <StatusBar />
-      <TerminalStrip />
+      <TerminalPanel isOpen={terminalOpen} onClose={() => setTerminalOpen(false)} />
+      <TerminalStrip isTerminalOpen={terminalOpen} onToggleTerminal={() => setTerminalOpen(v => !v)} />
     </div>
   )
 }

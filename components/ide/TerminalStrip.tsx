@@ -3,9 +3,14 @@
 import React from "react"
 
 import { useState, useEffect } from "react"
-import { Terminal, Wifi, Battery, Flame } from "lucide-react"
+import { Terminal, Wifi, Battery, Flame, ChevronUp, ChevronDown } from "lucide-react"
 
-export default function TerminalStrip() {
+interface TerminalStripProps {
+  isTerminalOpen?: boolean
+  onToggleTerminal?: () => void
+}
+
+export default function TerminalStrip({ isTerminalOpen = false, onToggleTerminal }: TerminalStripProps) {
   const [time, setTime] = useState<Date | null>(null)
 
   useEffect(() => {
@@ -26,10 +31,25 @@ export default function TerminalStrip() {
       }}
     >
       <div className="flex items-center gap-5">
-        <TerminalItem>
+        <button
+          onClick={onToggleTerminal}
+          className="flex items-center gap-1.5 hover:text-[var(--text-primary)] transition-colors"
+          style={{
+            fontFamily: 'var(--font-mono)',
+            fontSize: '11px',
+            color: isTerminalOpen ? 'var(--text-primary)' : 'var(--text-muted)',
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            padding: 0,
+          }}
+          aria-label={isTerminalOpen ? "Close terminal panel" : "Open terminal panel"}
+          aria-expanded={isTerminalOpen}
+        >
           <Terminal size={14} />
           <span className="hidden sm:inline">Terminal</span>
-        </TerminalItem>
+          {isTerminalOpen ? <ChevronDown size={12} /> : <ChevronUp size={12} />}
+        </button>
         <TerminalItem className="text-[var(--accent-green)]">
           <Wifi size={14} />
           <span className="hidden sm:inline">Connected</span>

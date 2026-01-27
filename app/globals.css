@@ -211,6 +211,11 @@
   50% { opacity: 0; }
 }
 
+@keyframes blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+
 /* Hide scrollbars until hover */
 .scrollbar-hide-until-hover {
   scrollbar-width: thin;
