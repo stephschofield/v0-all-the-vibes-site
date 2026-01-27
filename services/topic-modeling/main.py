@@ -1,23 +1,25 @@
 """
 FastAPI service for DSPy-based topic modeling.
 Connects to Ollama for LLM inference.
+
+Note: Endpoints are synchronous because DSPy's configure() has async context issues.
+FastAPI runs sync endpoints in a thread pool automatically.
 """
 
 import os
-from contextlib import asynccontextmanager
 from typing import Optional
 
 import httpx
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+import dspy
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
 from topic_modeler import (
-    configure_ollama,
+    ExtractThemes,
+    SummarizeTopic,
     TopicAnalyzer,
     AgendaGenerator,
-    quick_theme_extraction,
-    quick_summarize,
 )
 
 
@@ -27,6 +29,9 @@ from topic_modeler import (
 
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ollama:11434")
 MODEL = os.getenv("OLLAMA_MODEL", "llama3.2")
+
+# Create LM instance once at module level
+LM = dspy.LM(f"ollama_chat/{MODEL}", api_base=OLLAMA_URL)
 
 
 # ============================================
@@ -65,22 +70,13 @@ class HealthResponse(BaseModel):
 
 
 # ============================================
-# App Lifecycle
+# App Setup
 # ============================================
-
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    """Configure DSPy on startup."""
-    print(f"Configuring DSPy with Ollama at {OLLAMA_URL}, model: {MODEL}")
-    configure_ollama(model=MODEL, base_url=OLLAMA_URL)
-    yield
-
 
 app = FastAPI(
     title="Topic Modeling Service",
     description="DSPy-powered topic analysis using Ollama",
     version="1.0.0",
-    lifespan=lifespan,
 )
 
 # CORS for Next.js frontend
@@ -94,16 +90,16 @@ app.add_middleware(
 
 
 # ============================================
-# Endpoints
+# Endpoints (Synchronous to avoid DSPy async context issues)
 # ============================================
 
 @app.get("/health", response_model=HealthResponse)
-async def health_check():
+def health_check():
     """Check service health and Ollama connectivity."""
     ollama_ok = False
     try:
-        async with httpx.AsyncClient() as client:
-            response = await client.get(f"{OLLAMA_URL}/api/tags", timeout=5.0)
+        with httpx.Client() as client:
+            response = client.get(f"{OLLAMA_URL}/api/tags", timeout=5.0)
             ollama_ok = response.status_code == 200
     except Exception:
         pass
@@ -117,7 +113,7 @@ async def health_check():
 
 
 @app.post("/analyze")
-async def analyze_topics(request: TopicsAnalysisRequest):
+def analyze_topics(request: TopicsAnalysisRequest):
     """
     Full topic analysis: themes, summaries, and prioritization.
     This is the comprehensive endpoint for deep analysis.
@@ -126,16 +122,17 @@ async def analyze_topics(request: TopicsAnalysisRequest):
         raise HTTPException(status_code=400, detail="No topics provided")
     
     try:
-        analyzer = TopicAnalyzer()
-        topics_data = [t.model_dump() for t in request.topics]
-        result = analyzer.analyze_topics(topics_data)
-        return result
+        with dspy.context(lm=LM):
+            analyzer = TopicAnalyzer()
+            topics_data = [t.model_dump() for t in request.topics]
+            result = analyzer.analyze_topics(topics_data)
+            return result
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
 
 
 @app.post("/themes")
-async def extract_themes(request: ThemeExtractionRequest):
+def extract_themes(request: ThemeExtractionRequest):
     """
     Quick theme extraction from topic strings.
     Lighter weight than full analysis.
@@ -144,14 +141,16 @@ async def extract_themes(request: ThemeExtractionRequest):
         raise HTTPException(status_code=400, detail="No topics provided")
     
     try:
-        themes = quick_theme_extraction(request.topics, model=MODEL)
-        return {"themes": themes}
+        with dspy.context(lm=LM):
+            extractor = dspy.ChainOfThought(ExtractThemes)
+            result = extractor(topics=request.topics)
+            return {"themes": result.themes}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Theme extraction failed: {str(e)}")
 
 
 @app.post("/summarize")
-async def summarize_topic(request: SummarizeRequest):
+def summarize_topic(request: SummarizeRequest):
     """
     Summarize a single topic with tags.
     """
@@ -159,18 +158,19 @@ async def summarize_topic(request: SummarizeRequest):
         raise HTTPException(status_code=400, detail="No topic provided")
     
     try:
-        result = quick_summarize(
-            topic=request.topic,
-            description=request.description or "",
-            model=MODEL,
-        )
-        return result
+        with dspy.context(lm=LM):
+            summarizer = dspy.ChainOfThought(SummarizeTopic)
+            result = summarizer(topic=request.topic, description=request.description or "")
+            return {
+                "summary": result.summary,
+                "tags": result.tags
+            }
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Summarization failed: {str(e)}")
 
 
 @app.post("/agenda")
-async def generate_agenda(request: AgendaRequest):
+def generate_agenda(request: AgendaRequest):
     """
     Generate a meeting agenda from topics.
     """
@@ -178,23 +178,25 @@ async def generate_agenda(request: AgendaRequest):
         raise HTTPException(status_code=400, detail="No topics provided")
     
     try:
-        generator = AgendaGenerator()
-        agenda = generator.create_agenda(
-            topics=request.topics,
-            duration_minutes=request.duration_minutes,
-        )
-        return {"agenda": agenda, "duration_minutes": request.duration_minutes}
+        with dspy.context(lm=LM):
+            generator = AgendaGenerator()
+            agenda = generator.create_agenda(
+                topics=request.topics,
+                duration_minutes=request.duration_minutes,
+            )
+            return {"agenda": agenda, "duration_minutes": request.duration_minutes}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Agenda generation failed: {str(e)}")
 
 
 @app.get("/")
-async def root():
+def root():
     """Service info."""
     return {
         "service": "Topic Modeling",
         "powered_by": "DSPy + Ollama",
         "model": MODEL,
+        "ollama_url": OLLAMA_URL,
         "endpoints": [
             "GET /health - Health check",
             "POST /analyze - Full topic analysis",
