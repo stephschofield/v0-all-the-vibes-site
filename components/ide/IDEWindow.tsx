@@ -17,7 +17,7 @@ export default function IDEWindow() {
   const [sidebarWidth, setSidebarWidth] = useState(220)
   const [chatWidth, setChatWidth] = useState(320)
   const [terminalOpen, setTerminalOpen] = useState(true)
-  const [terminalHeight, setTerminalHeight] = useState(200)
+  const [terminalHeight, setTerminalHeight] = useState(150)
 
   const handleSidebarResize = useCallback((delta: number) => {
     setSidebarWidth(prev => Math.max(150, Math.min(400, prev + delta)))
@@ -107,10 +107,16 @@ export default function IDEWindow() {
           label="Resize sidebar"
         />
         
-        {/* Editor pane */}
+        {/* Editor pane + Terminal (middle column) */}
         <div className="flex flex-col flex-1 overflow-hidden min-w-0">
           <TabBar />
           <EditorPane />
+          <TerminalPanel 
+            isOpen={terminalOpen} 
+            onClose={() => setTerminalOpen(false)} 
+            height={terminalHeight}
+            onResize={handleTerminalResize}
+          />
         </div>
         
         {/* Resize handle for chat */}
@@ -132,12 +138,6 @@ export default function IDEWindow() {
         </div>
       </div>
       <StatusBar />
-      <TerminalPanel 
-        isOpen={terminalOpen} 
-        onClose={() => setTerminalOpen(false)} 
-        height={terminalHeight}
-        onResize={handleTerminalResize}
-      />
       <TerminalStrip isTerminalOpen={terminalOpen} onToggleTerminal={() => setTerminalOpen(v => !v)} />
     </div>
   )

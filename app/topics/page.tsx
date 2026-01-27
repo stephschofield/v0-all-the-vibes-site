@@ -1,6 +1,6 @@
 import { Suspense } from 'react';
 import { TopicSubmissionForm } from '@/components/TopicSubmissionForm';
-import { TopicsList } from '@/components/TopicsList';
+import { TopicWordCloud } from '@/components/TopicWordCloud';
 
 export const metadata = {
   title: 'Weekly Call Topics',
@@ -9,25 +9,26 @@ export const metadata = {
 
 export default function TopicsPage() {
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
-      <div className="max-w-4xl mx-auto px-4 py-12">
-        <header className="mb-12">
-          <h1 className="text-3xl font-bold">Weekly Call Topics</h1>
-          <p className="mt-2 text-gray-400">
+    <div className="min-h-screen bg-gray-900 text-white flex flex-col">
+      <div className="flex-1 max-w-6xl w-full mx-auto px-4 py-6 flex flex-col">
+        <header className="mb-4">
+          <h1 className="text-2xl font-bold">Weekly Call Topics</h1>
+          <p className="text-sm text-gray-400">
             What would you like us to cover? Submit your ideas below.
           </p>
         </header>
 
-        <div className="grid gap-12 lg:grid-cols-2">
-          <section>
-            <h2 className="text-xl font-semibold mb-6">Submit a Topic</h2>
-            <TopicSubmissionForm />
+        <div className="flex-1 grid gap-6 lg:grid-cols-2 items-start">
+          {/* Left: Submit form */}
+          <section className="bg-gray-800/30 border border-gray-700 rounded-lg p-4">
+            <h2 className="text-lg font-semibold mb-3">Submit a Topic</h2>
+            <TopicSubmissionForm compact />
           </section>
 
+          {/* Right: Word cloud with themes/raw toggle */}
           <section>
-            <h2 className="text-xl font-semibold mb-6">Submitted Topics</h2>
-            <Suspense fallback={<div className="text-gray-400">Loading topics...</div>}>
-              <TopicsList />
+            <Suspense fallback={<div className="text-gray-400 p-4">Loading topics...</div>}>
+              <TopicWordCloud />
             </Suspense>
           </section>
         </div>
