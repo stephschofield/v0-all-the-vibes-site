@@ -1,9 +1,20 @@
+# =============================================================================
+# LOCAL DEVELOPMENT ONLY - DO NOT USE IN PRODUCTION
+# =============================================================================
+# This file contains default credentials for local development.
+# For production deployments:
+#   1. Use environment variables or secrets management
+#   2. Never use default passwords
+#   3. See .env.example for required configuration
+# =============================================================================
+
 services:
   app:
     build: .
     ports:
       - "3000:3000"
     environment:
+      # Default credentials - LOCAL DEV ONLY
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/vibes
       - OLLAMA_URL=http://ollama:11434
       - TOPIC_MODELING_URL=http://topic-modeling:8000
@@ -32,6 +43,7 @@ services:
   db:
     image: pgvector/pgvector:pg16
     environment:
+      # Default credentials - LOCAL DEV ONLY, change for any shared environment
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
       POSTGRES_DB: vibes

@@ -104,3 +104,28 @@ export async function getTopicWords(): Promise<{ word: string; count: number }[]
     return [];
   }
 }
+
+export async function clearAllTopics(): Promise<{ success: boolean; deleted: number; error?: string }> {
+  try {
+    const supabase = getSupabase();
+    
+    // Get count first
+    const { count } = await supabase
+      .from('topic_requests')
+      .select('*', { count: 'exact', head: true });
+    
+    // Delete all
+    const { error } = await supabase
+      .from('topic_requests')
+      .delete()
+      .neq('id', 0); // Delete all rows (neq id 0 matches everything)
+
+    if (error) throw error;
+
+    revalidatePath('/topics');
+    return { success: true, deleted: count || 0 };
+  } catch (error) {
+    console.error('Failed to clear topics:', error);
+    return { success: false, deleted: 0, error: String(error) };
+  }
+}
