@@ -2,7 +2,7 @@
 
 > *"I don't have time to explain things twice. Read this."*
 
-Last updated: January 26, 2026
+Last updated: January 27, 2026
 
 ---
 
@@ -35,6 +35,7 @@ Last updated: January 26, 2026
 | **Fix ESLint warnings** | 15 warnings fixed: unused imports, img→Image, console, useCallback |
 | **Color contrast improvements** | syntax-comment, text-muted, gutter, muted-foreground all ≥4.5:1 |
 | **Terminal easter egg** | Interactive ASCII banner on `npx @vibes/cli init` with typewriter animation |
+| **ASCII banner redesign** | New d8888 font with orange→purple and cyan→teal gradient, web-safe characters |
 
 ---
 

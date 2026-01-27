@@ -31,6 +31,12 @@ OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ollama:11434")
 MODEL = os.getenv("OLLAMA_MODEL", "llama3.2")
 TEMPERATURE = float(os.getenv("OLLAMA_TEMPERATURE", "0.7"))
 
+# CORS: Production - Set ALLOWED_ORIGINS=https://your-domain.vercel.app
+ALLOWED_ORIGINS = os.getenv(
+    "ALLOWED_ORIGINS",
+    "http://localhost:3000,http://app:3000"
+).split(",")
+
 # Create LM instance once at module level
 # Temperature: 0.0 = deterministic, 1.0+ = creative/random
 LM = dspy.LM(f"ollama_chat/{MODEL}", api_base=OLLAMA_URL, temperature=TEMPERATURE)
@@ -85,7 +91,7 @@ app = FastAPI(
 # CORS for Next.js frontend
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://app:3000"],
+    allow_origins=ALLOWED_ORIGINS,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],

@@ -79,4 +79,4 @@ next-env.d.ts
 ._*
 .Spotlight-V100
 .Trashes
-ehthumbs.db
+ehthumbs.db__pycache__/

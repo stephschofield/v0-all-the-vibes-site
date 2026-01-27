@@ -1,6 +1,7 @@
 "use client"
 
-import React from "react"
+import React, { useState, useCallback, useEffect, useRef } from "react"
+import { X } from "lucide-react"
 import { useIDE } from "./IDEContext"
 import MarkdownSection from "../editor/MarkdownSection"
 import SimpleBrowser from "../editor/SimpleBrowser"
@@ -309,14 +310,52 @@ function UpcomingEventsCode() {
 }
 
 function TopicRequestsLayout() {
+  const { closeFile } = useIDE()
+  const [codePaneHeight, setCodePaneHeight] = useState(120)
+  const [isResizing, setIsResizing] = useState(false)
+  const resizeRef = useRef<{ startY: number; startHeight: number } | null>(null)
+  
+  const MIN_HEIGHT = 60
+  const MAX_HEIGHT = 400
+  
+  const handleResizeStart = useCallback((e: React.MouseEvent) => {
+    e.preventDefault()
+    setIsResizing(true)
+    resizeRef.current = { startY: e.clientY, startHeight: codePaneHeight }
+  }, [codePaneHeight])
+  
+  useEffect(() => {
+    if (!isResizing) return
+    
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!resizeRef.current) return
+      const delta = resizeRef.current.startY - e.clientY
+      const newHeight = Math.min(MAX_HEIGHT, Math.max(MIN_HEIGHT, resizeRef.current.startHeight + delta))
+      setCodePaneHeight(newHeight)
+    }
+    
+    const handleMouseUp = () => {
+      setIsResizing(false)
+      resizeRef.current = null
+    }
+    
+    document.addEventListener('mousemove', handleMouseMove)
+    document.addEventListener('mouseup', handleMouseUp)
+    
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+    }
+  }, [isResizing])
+  
   return (
     <div 
       className="flex flex-col flex-1 overflow-hidden"
       style={{ background: 'var(--ide-bg)' }}
     >
-      {/* Simple Browser - Takes 85% of height */}
-      <div className="flex-1 p-2" style={{ height: '85%', minHeight: 0 }}>
-        <SimpleBrowser showBrowserTab={false}>
+      {/* Simple Browser - Takes remaining height */}
+      <div className="flex-1 p-2" style={{ minHeight: 0 }}>
+        <SimpleBrowser showBrowserTab={false} onClose={() => closeFile('topic-requests.py')}>
           <div className="p-3 sm:p-4 overflow-auto h-full ide-scrollable">
             {/* Page Header - Compact */}
             <div className="text-center mb-4">
@@ -356,44 +395,82 @@ function TopicRequestsLayout() {
         </SimpleBrowser>
       </div>
 
-      {/* Code Pane - Takes 15% of height */}
+      {/* Resizable Code Pane */}
       <div 
-        className="flex overflow-auto ide-scrollable"
+        className="flex flex-col overflow-hidden relative flex-shrink-0"
         style={{
-          height: '15%',
-          minHeight: '80px',
+          height: `${codePaneHeight}px`,
           borderTop: '1px solid var(--ide-border)',
           fontFamily: 'var(--font-mono)',
           fontSize: 'var(--text-base)',
           lineHeight: '1.75',
         }}
       >
-        {/* Line Numbers Gutter */}
-        <div 
-          className="hidden sm:flex flex-col flex-shrink-0 py-2 select-none"
-          style={{
-            width: '50px',
-            background: 'rgba(255, 255, 255, 0.02)',
-            borderRight: '1px solid var(--ide-border)',
-          }}
+        {/* Resize handle */}
+        <div
+          className="absolute top-0 left-0 right-0 h-2 cursor-ns-resize z-20 flex items-center justify-center group"
+          onMouseDown={handleResizeStart}
+          style={{ marginTop: '-4px' }}
         >
-          {Array.from({ length: 12 }, (_, i) => (
-            <span 
-              key={i} 
-              className="h-[20px] pr-4 text-right"
-              style={{
-                fontSize: 'var(--text-xs)',
-                color: 'var(--text-muted)',
-              }}
-            >
-              {i + 1}
-            </span>
-          ))}
+          <div 
+            className="w-10 h-1 rounded-full transition-colors group-hover:bg-[var(--accent-blue)]"
+            style={{ background: isResizing ? 'var(--accent-blue)' : 'var(--ide-border)' }}
+          />
         </div>
         
-        {/* Code Content */}
-        <div className="flex-1 p-2 sm:p-3 overflow-auto ide-scrollable">
-          <TopicRequestsCode />
+        {/* Code Pane Header with close button */}
+        <div 
+          className="flex items-center justify-between px-3 py-1 flex-shrink-0"
+          style={{
+            background: 'rgba(255, 255, 255, 0.02)',
+            borderBottom: '1px solid var(--ide-border)',
+          }}
+        >
+          <span 
+            className="text-xs"
+            style={{ color: 'var(--text-muted)', fontFamily: 'var(--font-display)' }}
+          >
+            topic-requests.py
+          </span>
+          <button
+            onClick={() => closeFile('topic-requests.py')}
+            className="p-1 rounded hover:bg-white/10 transition-colors"
+            style={{ color: 'var(--text-muted)' }}
+            aria-label="Close file"
+          >
+            <X size={14} />
+          </button>
+        </div>
+        
+        {/* Code content area */}
+        <div className="flex flex-1 overflow-hidden">
+          {/* Line Numbers Gutter */}
+          <div 
+            className="hidden sm:flex flex-col flex-shrink-0 py-2 select-none overflow-hidden"
+            style={{
+              width: '50px',
+              background: 'rgba(255, 255, 255, 0.02)',
+              borderRight: '1px solid var(--ide-border)',
+            }}
+          >
+            {Array.from({ length: 12 }, (_, i) => (
+              <span 
+                key={i} 
+                className="h-[20px] pr-4 text-right"
+                style={{
+                  fontSize: 'var(--text-xs)',
+                  color: 'var(--text-muted)',
+                }}
+              >
+                {i + 1}
+              </span>
+            ))}
+          </div>
+          
+          {/* Code Content */}
+          <div className="flex-1 p-2 sm:p-3 overflow-auto scrollbar-hide-until-hover">
+            <TopicRequestsCode />
+          </div>
         </div>
       </div>
     </div>

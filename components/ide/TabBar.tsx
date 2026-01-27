@@ -23,8 +23,8 @@ interface TabProps {
   onClick: () => void
   onClose: () => void
   active: boolean
-  onKeyDown: (e: KeyboardEvent<HTMLButtonElement>) => void
-  tabRef: (el: HTMLButtonElement | null) => void
+  onKeyDown: (e: KeyboardEvent<HTMLDivElement>) => void
+  tabRef: (el: HTMLDivElement | null) => void
 }
 
 function Tab({ name, icon, onClick, onClose, active, onKeyDown, tabRef }: TabProps) {
@@ -32,13 +32,13 @@ function Tab({ name, icon, onClick, onClose, active, onKeyDown, tabRef }: TabPro
   const panelId = `panel-${name.replace(/\./g, '-')}`
   
   return (
-    <button 
+    <div 
       ref={tabRef}
       role="tab"
       aria-selected={active}
       aria-controls={panelId}
       tabIndex={active ? 0 : -1}
-      className={`group flex items-center gap-2 h-9 px-4 relative transition-all duration-100 hover:-translate-y-[1px] ${
+      className={`group flex items-center gap-2 h-9 px-4 relative transition-all duration-100 hover:-translate-y-[1px] cursor-pointer ${
         active 
           ? 'bg-[var(--ide-bg)] text-[var(--text-primary)]' 
           : 'bg-[var(--ide-tab-inactive)] text-[var(--text-muted)] hover:bg-white/[0.03] hover:text-[var(--text-secondary)]'
@@ -51,7 +51,15 @@ function Tab({ name, icon, onClick, onClose, active, onKeyDown, tabRef }: TabPro
         fontWeight: 500,
       }}
       onClick={onClick}
-      onKeyDown={onKeyDown}
+      onKeyDown={(e) => {
+        // Handle Enter/Space for activation (standard button behavior)
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          onClick()
+        } else {
+          onKeyDown(e)
+        }
+      }}
     >
       {active && (
         <span 
@@ -63,27 +71,28 @@ function Tab({ name, icon, onClick, onClose, active, onKeyDown, tabRef }: TabPro
         <TabIcon type={icon} />
       </span>
       <span className="whitespace-nowrap">{name}</span>
-      <span 
-        role="button"
+      <button 
+        type="button"
         aria-label={`Close ${name} tab`}
-        tabIndex={-1}
-        className="flex items-center p-0.5 rounded opacity-0 group-hover:opacity-50 hover:!opacity-100 hover:bg-white/10 transition-all"
+        className={`flex items-center p-0.5 ml-1 rounded transition-all hover:bg-white/20 ${
+          active ? 'opacity-60 hover:opacity-100' : 'opacity-30 hover:opacity-80'
+        }`}
         onClick={(e) => {
           e.stopPropagation()
           onClose()
         }}
       >
         <X size={14} />
-      </span>
-    </button>
+      </button>
+    </div>
   )
 }
 
 export default function TabBar() {
   const { activeFile, setActiveFile, openFiles, closeFile } = useIDE()
-  const tabRefs = useRef<(HTMLButtonElement | null)[]>([])
+  const tabRefs = useRef<(HTMLDivElement | null)[]>([])
   
-  const handleKeyDown = useCallback((e: KeyboardEvent<HTMLButtonElement>, currentIndex: number) => {
+  const handleKeyDown = useCallback((e: KeyboardEvent<HTMLDivElement>, currentIndex: number) => {
     const tabCount = openFiles.length
     let newIndex: number | null = null
     
@@ -117,7 +126,7 @@ export default function TabBar() {
   
   return (
     <div 
-      className="flex items-end overflow-x-auto ide-scrollable"
+      className="flex items-end overflow-hidden"
       style={{
         height: 'var(--tabbar-height)',
         background: 'var(--ide-tab-inactive)',

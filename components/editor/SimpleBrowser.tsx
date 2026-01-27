@@ -2,14 +2,15 @@
 
 import React from "react"
 
-import { ArrowLeft, ArrowRight, RotateCcw, ExternalLink } from "lucide-react"
+import { ArrowLeft, ArrowRight, RotateCcw, ExternalLink, X } from "lucide-react"
 
 interface SimpleBrowserProps {
   children: React.ReactNode
   showBrowserTab?: boolean
+  onClose?: () => void
 }
 
-export default function SimpleBrowser({ children, showBrowserTab = true }: SimpleBrowserProps) {
+export default function SimpleBrowser({ children, showBrowserTab = true, onClose }: SimpleBrowserProps) {
   return (
     <div 
       className="flex flex-col h-full rounded-lg overflow-hidden"
@@ -117,6 +118,18 @@ export default function SimpleBrowser({ children, showBrowserTab = true }: Simpl
         >
           <ExternalLink size={14} />
         </button>
+
+        {/* Close Button */}
+        {onClose && (
+          <button 
+            onClick={onClose}
+            className="p-1.5 rounded hover:bg-white/10 transition-colors"
+            style={{ color: 'var(--text-muted)' }}
+            aria-label="Close browser panel"
+          >
+            <X size={14} />
+          </button>
+        )}
       </div>
 
       {/* Browser Content */}

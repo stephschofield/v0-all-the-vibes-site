@@ -120,6 +120,8 @@ python -i scripts/dspy_playground.py
 |----------|---------|-------------|
 | `OLLAMA_URL` | `http://ollama:11434` (Docker) / `http://localhost:11434` (local) | Ollama API URL |
 | `OLLAMA_MODEL` | `llama3.2` | Model to use |
+| `OLLAMA_TEMPERATURE` | `0.7` | LLM temperature (0.0 = deterministic, 1.0+ = creative) |
+| `ALLOWED_ORIGINS` | `http://localhost:3000,http://app:3000` | Comma-separated CORS origins. Set to your production URL (e.g., `https://your-app.vercel.app`) |
 | `NEXT_PUBLIC_SUPABASE_URL` | - | Supabase URL (for --from-db) |
 | `SUPABASE_SERVICE_KEY` | - | Supabase service key |
 
