@@ -8,7 +8,7 @@
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)](https://react.dev)
 [![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?style=for-the-badge&logo=typescript)](https://typescriptlang.org)
 
-![IDE Overview](public/screenshots/01-ide-overview.png)
+![Demo](public/screenshots/demo.gif)
 
 ## ✨ What is this?
 
@@ -31,10 +31,6 @@ The site covers the emerging ecosystem of AI pair-programming tools:
 | Tab Navigation | Sidebar |
 |:---:|:---:|
 | ![Tabs](public/screenshots/03-tabs-view.png) | ![Sidebar](public/screenshots/02-sidebar-interaction.png) |
-
-### 🎬 Demo
-
-![Demo](public/screenshots/demo.gif)
 
 ## 🏗️ Architecture
 
