@@ -1,11 +1,17 @@
 'use client';
 
 import { useEffect, useState, useCallback } from 'react';
-import { getTopicWords } from '@/lib/actions/topics';
 
-interface WordData {
-  word: string;
-  count: number;
+interface Theme {
+  name: string;
+  description: string;
+  related_topics: number[];
+}
+
+interface ThemesResponse {
+  themes: Theme[];
+  topicCount: number;
+  error?: string;
 }
 
 const COLORS = [
@@ -20,29 +26,40 @@ const COLORS = [
 ];
 
 export function TopicWordCloud() {
-  const [words, setWords] = useState<WordData[]>([]);
+  const [themes, setThemes] = useState<Theme[]>([]);
+  const [topicCount, setTopicCount] = useState(0);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const loadWords = useCallback(async () => {
+  const loadThemes = useCallback(async () => {
     try {
-      const data = await getTopicWords();
-      setWords(data);
-    } catch (error) {
-      console.error('Failed to load words:', error);
+      setError(null);
+      const response = await fetch('/api/themes');
+      const data: ThemesResponse = await response.json();
+      
+      if (data.error) {
+        setError(data.error);
+      }
+      
+      setThemes(data.themes || []);
+      setTopicCount(data.topicCount || 0);
+    } catch (err) {
+      console.error('Failed to load themes:', err);
+      setError('Failed to connect to theme service');
     } finally {
       setLoading(false);
     }
   }, []);
 
   useEffect(() => {
-    loadWords();
-  }, [loadWords]);
+    loadThemes();
+  }, [loadThemes]);
 
-  // Refresh every 10 seconds to catch new submissions
+  // Refresh every 30 seconds to catch new submissions (themes are more expensive)
   useEffect(() => {
-    const interval = setInterval(loadWords, 10000);
+    const interval = setInterval(loadThemes, 30000);
     return () => clearInterval(interval);
-  }, [loadWords]);
+  }, [loadThemes]);
 
   if (loading) {
     return (
@@ -53,12 +70,19 @@ export function TopicWordCloud() {
           border: '1px solid var(--ide-border)' 
         }}
       >
-        <p style={{ color: 'var(--text-muted)' }}>Loading topics...</p>
+        <div className="text-center">
+          <div className="animate-pulse mb-2">
+            <span style={{ color: 'var(--accent-cyan)' }}>●</span>
+            <span style={{ color: 'var(--accent-pink)' }} className="mx-1">●</span>
+            <span style={{ color: 'var(--accent-yellow)' }}>●</span>
+          </div>
+          <p style={{ color: 'var(--text-muted)' }}>Analyzing topics with AI...</p>
+        </div>
       </div>
     );
   }
 
-  if (words.length === 0) {
+  if (themes.length === 0 && topicCount === 0) {
     return (
       <div 
         className="h-full flex flex-col items-center justify-center p-6 rounded-lg text-center"
@@ -83,7 +107,31 @@ export function TopicWordCloud() {
     );
   }
 
-  const maxCount = Math.max(...words.map(w => w.count));
+  // If we have topics but theme extraction failed, show a message
+  if (themes.length === 0 && topicCount > 0) {
+    return (
+      <div 
+        className="p-6 rounded-lg"
+        style={{ 
+          background: 'rgba(0,0,0,0.2)', 
+          border: '1px solid var(--ide-border)' 
+        }}
+      >
+        <h3 
+          className="text-lg font-semibold mb-4"
+          style={{ color: 'var(--text-primary)' }}
+        >
+          What the community wants to learn
+        </h3>
+        <p style={{ color: 'var(--text-muted)' }}>
+          {topicCount} topic{topicCount !== 1 ? 's' : ''} submitted
+          {error && <span className="block text-sm mt-1" style={{ color: 'var(--accent-pink)' }}>
+            (Theme analysis unavailable)
+          </span>}
+        </p>
+      </div>
+    );
+  }
 
   return (
     <div 
@@ -94,34 +142,69 @@ export function TopicWordCloud() {
       }}
     >
       <h3 
-        className="text-lg font-semibold mb-4"
+        className="text-lg font-semibold mb-2"
         style={{ color: 'var(--text-primary)' }}
       >
         What the community wants to learn
       </h3>
-      <div className="flex flex-wrap gap-2 justify-center">
-        {words.map((item, index) => {
-          // Scale font size based on count (14px to 32px)
-          const scale = item.count / maxCount;
-          const fontSize = 14 + (scale * 18);
+      <p 
+        className="text-sm mb-4"
+        style={{ color: 'var(--text-muted)' }}
+      >
+        AI-extracted themes from {topicCount} submission{topicCount !== 1 ? 's' : ''}
+      </p>
+      <div className="flex flex-wrap gap-3">
+        {themes.map((theme, index) => {
           const color = COLORS[index % COLORS.length];
-          const opacity = 0.6 + (scale * 0.4);
+          const relatedCount = theme.related_topics?.length || 1;
+          // Scale based on how many topics are in this theme
+          const scale = Math.min(relatedCount / Math.max(topicCount, 1), 1);
+          const fontSize = 14 + (scale * 10);
           
           return (
-            <span
-              key={item.word}
-              className="inline-block px-2 py-1 rounded transition-transform hover:scale-110 cursor-default"
+            <div
+              key={theme.name}
+              className="group relative px-3 py-2 rounded-lg transition-all hover:scale-105 cursor-default"
               style={{
-                fontSize: `${fontSize}px`,
-                color,
-                opacity,
-                fontFamily: 'var(--font-display)',
-                fontWeight: scale > 0.5 ? 600 : 400,
+                background: `${color}20`,
+                border: `1px solid ${color}40`,
               }}
-              title={`${item.count} submission${item.count > 1 ? 's' : ''}`}
             >
-              {item.word}
-            </span>
+              <span
+                style={{
+                  fontSize: `${fontSize}px`,
+                  color,
+                  fontFamily: 'var(--font-display)',
+                  fontWeight: 500,
+                }}
+              >
+                {theme.name}
+              </span>
+              
+              {/* Tooltip with description */}
+              <div 
+                className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 rounded-lg opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 w-64"
+                style={{
+                  background: 'var(--ide-sidebar)',
+                  border: '1px solid var(--ide-border)',
+                }}
+              >
+                <p 
+                  className="text-sm"
+                  style={{ color: 'var(--text-primary)' }}
+                >
+                  {theme.description}
+                </p>
+                {theme.related_topics && theme.related_topics.length > 0 && (
+                  <p 
+                    className="text-xs mt-1"
+                    style={{ color: 'var(--text-muted)' }}
+                  >
+                    {theme.related_topics.length} related topic{theme.related_topics.length !== 1 ? 's' : ''}
+                  </p>
+                )}
+              </div>
+            </div>
           );
         })}
       </div>

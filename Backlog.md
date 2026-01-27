@@ -29,6 +29,10 @@ Last updated: January 26, 2026
 
 ## In Progress
 
+| Task | Notes |
+|------|-------|
+| DSPy Word Cloud Integration | Replace raw word counts with AI-extracted themes from DSPy service |
+
 ---
 
 ## On Hold
