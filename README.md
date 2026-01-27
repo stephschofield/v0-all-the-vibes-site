@@ -32,7 +32,9 @@ The site covers the emerging ecosystem of AI pair-programming tools:
 |:---:|:---:|
 | ![Tabs](public/screenshots/03-tabs-view.png) | ![Sidebar](public/screenshots/02-sidebar-interaction.png) |
 
-> 🎬 **Video Demo**: See [public/screenshots/demo.webm](public/screenshots/demo.webm) for a full walkthrough.
+### 🎬 Demo
+
+![Demo](public/screenshots/demo.gif)
 
 ## 🏗️ Architecture
 
