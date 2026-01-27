@@ -16,6 +16,7 @@ Last updated: January 26, 2026
 | Add to Calendar feature | .ics download, Google Calendar, Outlook integration for events |
 | Topic Requests Feature | Renamed speaker-signup.py to topic-requests.py, word cloud display, Supabase integration, removed AI/semantic search |
 | DSPy Topic Modeling | Python service + scripts using Ollama llama3.2 for topic analysis |
+| DSPy Word Cloud Integration | Word cloud now uses AI-extracted themes instead of raw word counts |
 | Fix TypeScript errors | Removed `ignoreBuildErrors`, build passes with 0 errors |
 | Configure ESLint | Created eslint.config.mjs with flat config, found 5 warnings (unused imports, img tags) |
 | Add error boundaries | Created app/error.tsx and app/topics/error.tsx with VS Code styling |
@@ -28,10 +29,6 @@ Last updated: January 26, 2026
 ---
 
 ## In Progress
-
-| Task | Notes |
-|------|-------|
-| DSPy Word Cloud Integration | Replace raw word counts with AI-extracted themes from DSPy service |
 
 ---
 
