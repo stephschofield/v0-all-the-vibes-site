@@ -52,23 +52,24 @@ function getFileTypeLabel(type: string): string {
 interface FileTreeNodeProps {
   item: FileItem
   depth: number
-  isFirstChild?: boolean
-  isLastChild?: boolean
+  index: number
+  setSize: number
 }
 
-function FileTreeNode({ item, depth, isFirstChild, isLastChild }: FileTreeNodeProps) {
+function FileTreeNode({ item, depth, index, setSize }: FileTreeNodeProps) {
   const [expanded, setExpanded] = useState(item.expanded ?? false)
   const { activeFile, setActiveFile } = useIDE()
   const isFolder = item.type === 'folder'
   const isActive = !isFolder && item.name === activeFile
+  const level = depth + 1 // aria-level is 1-based
 
-  const handleClick = () => {
+  const handleClick = useCallback(() => {
     if (isFolder) {
-      setExpanded(!expanded)
+      setExpanded(prev => !prev)
     } else {
       setActiveFile(item.name)
     }
-  }
+  }, [isFolder, setActiveFile, item.name])
 
   const handleKeyDown = useCallback((e: KeyboardEvent<HTMLButtonElement>) => {
     switch (e.key) {
@@ -107,7 +108,7 @@ function FileTreeNode({ item, depth, isFirstChild, isLastChild }: FileTreeNodePr
         }
         break
     }
-  }, [isFolder, expanded, handleClick])
+  }, [isFolder, expanded, handleClick, setExpanded])
 
   // Generate aria-label based on item type and state
   const ariaLabel = isFolder
@@ -115,11 +116,14 @@ function FileTreeNode({ item, depth, isFirstChild, isLastChild }: FileTreeNodePr
     : `${item.name}, ${getFileTypeLabel(item.type)}${isActive ? ', currently open' : ''}`
 
   return (
-    <div 
+    <li 
       role="treeitem"
       aria-expanded={isFolder ? expanded : undefined}
       aria-selected={isActive}
-      className="animate-[slideInLeft_0.3s_ease-out_forwards]"
+      aria-level={level}
+      aria-setsize={setSize}
+      aria-posinset={index + 1}
+      className="animate-[slideInLeft_0.3s_ease-out_forwards] list-none"
       style={{ animationDelay: `${depth * 0.03}s` }}
     >
       <button 
@@ -166,19 +170,19 @@ function FileTreeNode({ item, depth, isFirstChild, isLastChild }: FileTreeNodePr
       </button>
       
       {isFolder && expanded && item.children && (
-        <div role="group" aria-label={`Contents of ${item.name}`}>
-          {item.children.map((child, index) => (
+        <ul role="group" aria-label={`Contents of ${item.name}`} className="list-none m-0 p-0">
+          {item.children.map((child, idx) => (
             <FileTreeNode 
               key={child.name} 
               item={child} 
               depth={depth + 1}
-              isFirstChild={index === 0}
-              isLastChild={index === item.children!.length - 1}
+              index={idx}
+              setSize={item.children!.length}
             />
           ))}
-        </div>
+        </ul>
       )}
-    </div>
+    </li>
   )
 }
 
@@ -186,7 +190,7 @@ interface SidebarProps {
   dynamicWidth?: number
 }
 
-export default function Sidebar({ dynamicWidth }: SidebarProps) {
+export default function Sidebar({ dynamicWidth: _dynamicWidth }: SidebarProps) {
   return (
     <aside 
       className="flex flex-col relative w-full h-full"
@@ -211,21 +215,21 @@ export default function Sidebar({ dynamicWidth }: SidebarProps) {
       </div>
       
       {/* File Tree */}
-      <div 
+      <ul 
         role="tree" 
         aria-label="File explorer"
-        className="flex-1 overflow-y-auto py-2 ide-scrollable"
+        className="flex-1 overflow-y-auto py-2 ide-scrollable list-none m-0 p-0"
       >
         {fileTree.map((item, index) => (
           <FileTreeNode 
             key={item.name} 
             item={item} 
             depth={0}
-            isFirstChild={index === 0}
-            isLastChild={index === fileTree.length - 1}
+            index={index}
+            setSize={fileTree.length}
           />
         ))}
-      </div>
+      </ul>
       
       </aside>
   )

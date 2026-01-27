@@ -1,42 +1,19 @@
 "use client"
 
 import { useState } from "react"
+import Image from "next/image"
 import { 
   Plus, Settings, MoreHorizontal, Maximize2, X, 
   RefreshCw, Search, Filter, PanelRight,
   Paperclip, Monitor, Code, ChevronDown, Send,
-  Sparkles, MessageSquare, ZoomIn, Users, Bell
+  Sparkles, MessageSquare, Bell
 } from "lucide-react"
-
-// GitHub Copilot icon - dual sparkle design
-function CopilotIcon({ size = 14, className = "" }: { size?: number, className?: string }) {
-  return (
-    <svg 
-      width={size} 
-      height={size} 
-      viewBox="0 0 24 24" 
-      fill="none" 
-      className={className}
-    >
-      {/* Left sparkle */}
-      <path 
-        d="M8 2L9.5 6.5L14 8L9.5 9.5L8 14L6.5 9.5L2 8L6.5 6.5L8 2Z" 
-        fill="currentColor"
-      />
-      {/* Right sparkle (smaller) */}
-      <path 
-        d="M18 12L19 15L22 16L19 17L18 20L17 17L14 16L17 15L18 12Z" 
-        fill="currentColor"
-      />
-    </svg>
-  )
-}
 
 interface ChatPanelProps {
   dynamicWidth?: number
 }
 
-export default function ChatPanel({ dynamicWidth }: ChatPanelProps) {
+export default function ChatPanel({ dynamicWidth: _dynamicWidth }: ChatPanelProps) {
   const [inputValue, setInputValue] = useState("")
 
   return (
@@ -64,6 +41,7 @@ export default function ChatPanel({ dynamicWidth }: ChatPanelProps) {
           <button 
             className="p-1 rounded hover:bg-white/5 transition-colors"
             style={{ color: 'var(--text-muted)' }}
+            aria-label="More options"
           >
             <MoreHorizontal size={14} />
           </button>
@@ -72,18 +50,21 @@ export default function ChatPanel({ dynamicWidth }: ChatPanelProps) {
           <button 
             className="p-1.5 rounded hover:bg-white/5 transition-colors"
             style={{ color: 'var(--text-muted)' }}
+            aria-label="New chat"
           >
             <Plus size={14} />
           </button>
           <button 
             className="p-1.5 rounded hover:bg-white/5 transition-colors"
             style={{ color: 'var(--text-muted)' }}
+            aria-label="Settings"
           >
             <Settings size={14} />
           </button>
           <button 
             className="p-1.5 rounded hover:bg-white/5 transition-colors"
             style={{ color: 'var(--text-muted)' }}
+            aria-label="More options"
           >
             <MoreHorizontal size={14} />
           </button>
@@ -94,12 +75,14 @@ export default function ChatPanel({ dynamicWidth }: ChatPanelProps) {
           <button 
             className="p-1.5 rounded hover:bg-white/5 transition-colors"
             style={{ color: 'var(--text-muted)' }}
+            aria-label="Maximize panel"
           >
             <Maximize2 size={14} />
           </button>
           <button 
             className="p-1.5 rounded hover:bg-white/5 transition-colors"
             style={{ color: 'var(--text-muted)' }}
+            aria-label="Close panel"
           >
             <X size={14} />
           </button>
@@ -124,24 +107,28 @@ export default function ChatPanel({ dynamicWidth }: ChatPanelProps) {
           <button 
             className="p-1 rounded hover:bg-white/5 transition-colors"
             style={{ color: 'var(--text-muted)' }}
+            aria-label="Refresh sessions"
           >
             <RefreshCw size={12} />
           </button>
           <button 
             className="p-1 rounded hover:bg-white/5 transition-colors"
             style={{ color: 'var(--text-muted)' }}
+            aria-label="Search sessions"
           >
             <Search size={12} />
           </button>
           <button 
             className="p-1 rounded hover:bg-white/5 transition-colors"
             style={{ color: 'var(--text-muted)' }}
+            aria-label="Filter sessions"
           >
             <Filter size={12} />
           </button>
           <button 
             className="p-1 rounded hover:bg-white/5 transition-colors"
             style={{ color: 'var(--text-muted)' }}
+            aria-label="Toggle panel"
           >
             <PanelRight size={12} />
           </button>
@@ -204,10 +191,12 @@ export default function ChatPanel({ dynamicWidth }: ChatPanelProps) {
           }}
         >
           <input
+            id="chat-message-input"
             type="text"
             value={inputValue}
             onChange={(e) => setInputValue(e.target.value)}
             placeholder="Describe what to build next"
+            aria-label="Type a message to Copilot"
             className="w-full bg-transparent border-none outline-none text-sm"
             style={{ 
               color: 'var(--text-primary)',
@@ -248,6 +237,7 @@ export default function ChatPanel({ dynamicWidth }: ChatPanelProps) {
             <button 
               className="p-1 rounded hover:bg-white/5 transition-colors"
               style={{ color: 'var(--text-muted)' }}
+              aria-label="More options"
             >
               <MoreHorizontal size={12} />
             </button>
@@ -258,6 +248,7 @@ export default function ChatPanel({ dynamicWidth }: ChatPanelProps) {
               background: inputValue ? 'var(--accent-purple)' : 'rgba(255, 255, 255, 0.05)',
               color: inputValue ? 'white' : 'var(--text-muted)',
             }}
+            aria-label="Send message"
           >
             <Send size={14} />
           </button>
@@ -274,15 +265,18 @@ export default function ChatPanel({ dynamicWidth }: ChatPanelProps) {
       >
         
         {/* GitHub Copilot Logo */}
-        <img 
+        <Image 
           src="/images/ghcp-logo.png" 
           alt="GitHub Copilot" 
+          width={48}
+          height={12}
           className="h-3 w-auto opacity-70 hover:opacity-100 transition-opacity cursor-pointer"
           style={{ filter: 'invert(1)' }}
         />
         <button 
           className="p-1 rounded hover:bg-white/5 transition-colors"
           style={{ color: 'var(--text-muted)' }}
+          aria-label="Notifications"
         >
           <Bell size={12} />
         </button>

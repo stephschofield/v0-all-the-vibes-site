@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import { Calendar, Clock, MapPin, Users, Repeat } from "lucide-react"
+import { Calendar, Clock, MapPin, Repeat } from "lucide-react"
 import { CalendarEvent } from "@/types/event"
 import { AddToCalendarButton } from "@/components/AddToCalendarButton"
 

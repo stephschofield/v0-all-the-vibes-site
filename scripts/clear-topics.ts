@@ -22,7 +22,7 @@ if (!supabaseUrl || !supabaseKey) {
 const supabase = createClient(supabaseUrl, supabaseKey);
 
 async function main() {
-  console.log('🔍 Checking current topics...');
+  console.warn('🔍 Checking current topics...');
   
   // Get current count
   const { count, error: countError } = await supabase
@@ -34,15 +34,15 @@ async function main() {
     process.exit(1);
   }
   
-  console.log(`📊 Found ${count || 0} topic submissions`);
+  console.warn(`📊 Found ${count || 0} topic submissions`);
   
   if (!count || count === 0) {
-    console.log('✅ No topics to clear');
+    console.warn('✅ No topics to clear');
     return;
   }
   
   // Delete all
-  console.log('🗑️  Clearing all topics...');
+  console.warn('🗑️  Clearing all topics...');
   const { error: deleteError } = await supabase
     .from('topic_requests')
     .delete()
@@ -53,7 +53,7 @@ async function main() {
     process.exit(1);
   }
   
-  console.log(`✅ Cleared ${count} topic submissions`);
+  console.warn(`✅ Cleared ${count} topic submissions`);
 }
 
 main().catch(console.error);

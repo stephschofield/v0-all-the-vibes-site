@@ -68,7 +68,7 @@ function Tab({ name, icon, onClick, active, onKeyDown, tabRef }: TabProps) {
       <span className="whitespace-nowrap">{name}</span>
       <span 
         role="button"
-        aria-label={`Close ${name}`}
+        aria-label={`Close ${name} tab`}
         tabIndex={-1}
         className="flex items-center p-0.5 rounded opacity-0 group-hover:opacity-50 hover:!opacity-100 hover:bg-white/10 transition-all"
         onClick={(e) => {

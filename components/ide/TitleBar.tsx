@@ -32,10 +32,17 @@ export default function TitleBar() {
       </div>
       
       {/* Menu Items */}
-      <nav className="flex gap-1">
+      <nav 
+        className="flex gap-1"
+        role="menubar"
+        aria-label="Application menu"
+      >
         {menus.map(menu => (
           <button 
             key={menu} 
+            role="menuitem"
+            aria-haspopup="menu"
+            aria-expanded={false}
             className="px-3 py-1.5 rounded-md transition-all duration-150 hover:bg-white/[0.08] active:scale-[0.98]"
             style={{
               fontFamily: 'var(--font-display)',
@@ -80,6 +87,7 @@ export default function TitleBar() {
           className="w-11 h-8 flex items-center justify-center transition-colors hover:bg-white/10"
           style={{ color: 'var(--text-muted)' }}
           title="Toggle Primary Side Bar"
+          aria-label="Toggle Primary Side Bar"
         >
           <PanelLeft size={16} />
         </button>
@@ -87,6 +95,7 @@ export default function TitleBar() {
           className="w-11 h-8 flex items-center justify-center transition-colors hover:bg-white/10"
           style={{ color: 'var(--text-muted)' }}
           title="Toggle Panel"
+          aria-label="Toggle Panel"
         >
           <Columns2 size={16} />
         </button>
@@ -94,6 +103,7 @@ export default function TitleBar() {
           className="w-11 h-8 flex items-center justify-center transition-colors hover:bg-white/10"
           style={{ color: 'var(--text-muted)' }}
           title="Toggle Secondary Side Bar"
+          aria-label="Toggle Secondary Side Bar"
         >
           <PanelRight size={16} />
         </button>
@@ -104,6 +114,7 @@ export default function TitleBar() {
           className="w-11 h-8 flex items-center justify-center transition-colors hover:bg-white/10"
           style={{ color: 'var(--text-muted)' }}
           title={windowState === 'fullscreen' ? 'Exit fullscreen' : 'Minimize'}
+          aria-label={windowState === 'fullscreen' ? 'Exit fullscreen' : 'Minimize'}
         >
           <Minus size={16} />
         </button>
@@ -112,6 +123,7 @@ export default function TitleBar() {
           className="w-11 h-8 flex items-center justify-center transition-colors hover:bg-white/10"
           style={{ color: 'var(--text-muted)' }}
           title="Maximize"
+          aria-label="Maximize"
         >
           <Square size={14} />
         </button>
@@ -120,6 +132,7 @@ export default function TitleBar() {
           className="w-11 h-8 flex items-center justify-center transition-colors hover:bg-[#e81123]"
           style={{ color: 'var(--text-muted)' }}
           title="Close"
+          aria-label="Close"
         >
           <X size={16} />
         </button>
