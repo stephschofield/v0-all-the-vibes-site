@@ -29,9 +29,11 @@ from topic_modeler import (
 
 OLLAMA_URL = os.getenv("OLLAMA_URL", "http://ollama:11434")
 MODEL = os.getenv("OLLAMA_MODEL", "llama3.2")
+TEMPERATURE = float(os.getenv("OLLAMA_TEMPERATURE", "0.7"))
 
 # Create LM instance once at module level
-LM = dspy.LM(f"ollama_chat/{MODEL}", api_base=OLLAMA_URL)
+# Temperature: 0.0 = deterministic, 1.0+ = creative/random
+LM = dspy.LM(f"ollama_chat/{MODEL}", api_base=OLLAMA_URL, temperature=TEMPERATURE)
 
 
 # ============================================
@@ -67,6 +69,7 @@ class HealthResponse(BaseModel):
     ollama_connected: bool
     model: str
     ollama_url: str
+    temperature: float
 
 
 # ============================================
@@ -109,6 +112,7 @@ def health_check():
         ollama_connected=ollama_ok,
         model=MODEL,
         ollama_url=OLLAMA_URL,
+        temperature=TEMPERATURE,
     )
 
 

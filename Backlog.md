@@ -25,6 +25,8 @@ Last updated: January 26, 2026
 | Keyboard nav in file tree | Arrow keys, Enter/Space, ARIA tree semantics in Sidebar.tsx (WCAG 2.1.1, 4.1.2) |
 | Tab semantics in TabBar | role="tablist", arrow key navigation, roving tabindex (WCAG 4.1.2) |
 | ResizeHandle keyboard support | Arrow keys, Home/End, Shift modifiers for panel resizing (WCAG 2.1.1) |
+| **Comprehensive README** | Full documentation with architecture, features, screenshots, setup instructions |
+| **UI Screenshots & Video** | Playwright capture: 4 screenshots + demo.webm in public/screenshots/ |
 
 ---
 
@@ -64,7 +66,6 @@ Last updated: January 26, 2026
 - [ ] **Performance optimization** — Bundle analysis, code splitting for heavy components
 - [ ] **SEO setup** — Metadata, OG images, sitemap for the community site
 - [ ] **CI/CD improvements** — GitHub Actions for testing, linting on PR
-- [ ] **Documentation** — README should describe the actual project, not just v0.app boilerplate
 
 ---
 
