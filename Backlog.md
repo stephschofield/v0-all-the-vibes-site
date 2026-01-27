@@ -34,6 +34,7 @@ Last updated: January 26, 2026
 | **Tab close button labels** | Dynamic "Close {name} tab" labels |
 | **Fix ESLint warnings** | 15 warnings fixed: unused imports, img→Image, console, useCallback |
 | **Color contrast improvements** | syntax-comment, text-muted, gutter, muted-foreground all ≥4.5:1 |
+| **Terminal easter egg** | Interactive ASCII banner on `npx @vibes/cli init` with typewriter animation |
 
 ---
 
@@ -56,7 +57,6 @@ Last updated: January 26, 2026
 ### Medium Priority (P2) — Feature Enhancement
 
 - [ ] **Additional real content integration** — CMS or API for non-calendar content
-- [ ] **Working terminal** — TerminalStrip.tsx exists but may need real functionality
 - [ ] **Functional file navigation** — Sidebar clicks should update editor content
 - [ ] **Chat panel functionality** — ChatPanel.tsx needs actual AI integration or mock
 - [ ] **Mobile responsiveness** — IDE metaphor on small screens needs consideration
