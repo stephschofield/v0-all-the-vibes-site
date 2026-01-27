@@ -28,25 +28,35 @@ interface TopicSubmissionFormProps {
 export function TopicSubmissionForm({ anonymous = false, embedded = false, compact = false }: TopicSubmissionFormProps) {
   const [state, formAction, isPending] = useActionState(submitAction, initialState);
 
-  const inputClasses = embedded 
+  // Compact + embedded gets the tightest styles
+  const isCompactEmbedded = embedded && compact;
+  
+  const inputClasses = isCompactEmbedded
+    ? "w-full px-3 py-1.5 bg-[rgba(0,0,0,0.3)] border border-[var(--ide-border)] rounded-md text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-blue)] focus:border-transparent text-sm"
+    : embedded 
     ? "w-full px-4 py-3 bg-[rgba(0,0,0,0.3)] border border-[var(--ide-border)] rounded-md text-[var(--text-primary)] placeholder-[var(--text-muted)] focus:outline-none focus:ring-2 focus:ring-[var(--accent-blue)] focus:border-transparent text-base"
     : compact
     ? "w-full px-3 py-2 bg-gray-800 border border-gray-700 rounded-md text-white text-sm placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
     : "w-full px-4 py-3 bg-gray-800 border border-gray-700 rounded-lg text-white text-lg placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent";
 
-  const labelClasses = embedded
+  const labelClasses = isCompactEmbedded
+    ? "block text-xs font-medium mb-0.5"
+    : embedded
     ? "block text-sm font-medium mb-2"
     : compact
     ? "block text-sm font-medium text-gray-200 mb-1"
     : "block text-base font-medium text-gray-200 mb-2";
 
-  const buttonClasses = embedded
+  const buttonClasses = isCompactEmbedded
+    ? "w-full px-3 py-2 bg-[var(--accent-blue)] hover:bg-[var(--accent-blue)]/80 disabled:bg-[var(--accent-blue)]/50 disabled:cursor-not-allowed text-white font-medium rounded-md transition-colors text-sm"
+    : embedded
     ? "w-full px-4 py-3 bg-[var(--accent-blue)] hover:bg-[var(--accent-blue)]/80 disabled:bg-[var(--accent-blue)]/50 disabled:cursor-not-allowed text-white font-medium rounded-md transition-colors text-base"
     : compact
     ? "w-full px-4 py-2.5 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed text-white font-medium text-sm rounded-md transition-colors"
     : "w-full px-6 py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-blue-800 disabled:cursor-not-allowed text-white font-medium text-lg rounded-lg transition-colors";
 
-  const spacing = compact ? "space-y-3" : embedded ? "space-y-5" : "space-y-6 max-w-lg";
+  const spacing = isCompactEmbedded ? "space-y-2" : compact ? "space-y-3" : embedded ? "space-y-5" : "space-y-6 max-w-lg";
+  const textareaRows = isCompactEmbedded ? 1 : compact ? 2 : 4;
 
   return (
     <form action={formAction} className={spacing}>
@@ -86,7 +96,7 @@ export function TopicSubmissionForm({ anonymous = false, embedded = false, compa
         <textarea
           id="description"
           name="description"
-          rows={compact ? 2 : 4}
+          rows={textareaRows}
           className={`${inputClasses} resize-none`}
           placeholder="Tell us more about what you'd like to learn..."
         />

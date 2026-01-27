@@ -3,18 +3,28 @@
 import { useState, useEffect, useCallback, useRef } from "react"
 import { X, ChevronDown, Plus, Trash2, SplitSquareVertical, GripHorizontal } from "lucide-react"
 
-// Compact single-line ASCII banner with gradient
+// ASCII art banner - styled like GitHub Copilot CLI
 const VIBES_BANNER = `
-[38;5;208m    ___    __    __       ________  ______  ______       _    __ ____ ____   ______   _____[0m
-[38;5;209m   /   |  / /   / /      /_  __/ / / / __/ / / / /      | |  / //  _// __ ) / ____/  / ___/[0m
-[38;5;210m  / /| | / /   / /        / / / /_/ / _/   \\_, /       | | / / / / / __  |/ __/     \\__ \\ [0m
-[38;5;213m / ___ |/ /___/ /___     / / / __  / /___   / /        | |/ /_/ / / /_/ // /___    ___/ / [0m
-[38;5;135m/_/  |_/_____/_____/    /_/ /_/ /_/_____/  /_/         |___//___//_____//_____/   /____/  [0m
+[38;5;208m   █████╗ ██╗     ██╗         ████████╗██╗  ██╗███████╗[0m
+[38;5;209m  ██╔══██╗██║     ██║         ╚══██╔══╝██║  ██║██╔════╝[0m
+[38;5;210m  ███████║██║     ██║            ██║   ███████║█████╗  [0m
+[38;5;211m  ██╔══██║██║     ██║            ██║   ██╔══██║██╔══╝  [0m
+[38;5;212m  ██║  ██║███████╗███████╗       ██║   ██║  ██║███████╗[0m
+[38;5;213m  ╚═╝  ╚═╝╚══════╝╚══════╝       ╚═╝   ╚═╝  ╚═╝╚══════╝[0m
 
-[38;5;45m   ________  __  _____  _____  ___   ___   ______________  __[0m
-[38;5;39m  / ___/ _ \\/  |/  /  |/  / / / / | / /  /  _/_  __/\\ \\/ /[0m
-[38;5;33m / /__/ ___/ /|_/ / /|_/ / /_/ /  |/ /  _/ /  / /    \\  / [0m
-[38;5;27m \\___/_/  /_/  /_/_/  /_/\\____/  /|_/  /___/ /_/     /_/  [0m
+[38;5;135m  ██╗   ██╗██╗██████╗ ███████╗███████╗[0m
+[38;5;141m  ██║   ██║██║██╔══██╗██╔════╝██╔════╝[0m
+[38;5;147m  ██║   ██║██║██████╔╝█████╗  ███████╗[0m
+[38;5;153m  ╚██╗ ██╔╝██║██╔══██╗██╔══╝  ╚════██║[0m
+[38;5;159m   ╚████╔╝ ██║██████╔╝███████╗███████║[0m
+[38;5;165m    ╚═══╝  ╚═╝╚═════╝ ╚══════╝╚══════╝[0m
+
+[38;5;45m   ██████╗ ██████╗ ███╗   ███╗███╗   ███╗██╗   ██╗███╗   ██╗██╗████████╗██╗   ██╗[0m
+[38;5;39m  ██╔════╝██╔═══██╗████╗ ████║████╗ ████║██║   ██║████╗  ██║██║╚══██╔══╝╚██╗ ██╔╝[0m
+[38;5;33m  ██║     ██║   ██║██╔████╔██║██╔████╔██║██║   ██║██╔██╗ ██║██║   ██║    ╚████╔╝ [0m
+[38;5;27m  ██║     ██║   ██║██║╚██╔╝██║██║╚██╔╝██║██║   ██║██║╚██╗██║██║   ██║     ╚██╔╝  [0m
+[38;5;21m  ╚██████╗╚██████╔╝██║ ╚═╝ ██║██║ ╚═╝ ██║╚██████╔╝██║ ╚████║██║   ██║      ██║   [0m
+[38;5;57m   ╚═════╝ ╚═════╝ ╚═╝     ╚═╝╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═══╝╚═╝   ╚═╝      ╚═╝   [0m
 `
 
 const WELCOME_MESSAGE = `
@@ -88,9 +98,10 @@ interface TerminalPanelProps {
   onClose: () => void
   height: number
   onResize: (delta: number) => void
+  onExpand: () => void
 }
 
-export default function TerminalPanel({ isOpen, onClose, height, onResize }: TerminalPanelProps) {
+export default function TerminalPanel({ isOpen, onClose, height, onResize, onExpand }: TerminalPanelProps) {
   const [commandRun, setCommandRun] = useState(false)
   const [displayedLines, setDisplayedLines] = useState<string[]>([])
   const [cursorVisible, setCursorVisible] = useState(true)
@@ -143,6 +154,9 @@ export default function TerminalPanel({ isOpen, onClose, height, onResize }: Ter
   const runCommand = useCallback(() => {
     if (commandRun || isTyping) return
     
+    // Expand terminal to show full animation
+    onExpand()
+    
     setIsTyping(true)
     setCommandRun(true)
     
@@ -169,7 +183,7 @@ export default function TerminalPanel({ isOpen, onClose, height, onResize }: Ter
     
     // Small delay before starting
     setTimeout(typeNextLine, 300)
-  }, [commandRun, isTyping])
+  }, [commandRun, isTyping, onExpand])
   
   // Handle keyboard
   const handleKeyDown = useCallback((e: React.KeyboardEvent) => {

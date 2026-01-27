@@ -31,6 +31,10 @@ export default function IDEWindow() {
     setTerminalHeight(prev => Math.max(100, Math.min(500, prev + delta)))
   }, [])
 
+  const handleTerminalExpand = useCallback(() => {
+    setTerminalHeight(380) // Expand to show full banner animation
+  }, [])
+
   // Don't render if window is closed or minimized (and not animating)
   if ((windowState === 'closed' || windowState === 'minimized') && animationState === 'none') {
     return null
@@ -116,6 +120,7 @@ export default function IDEWindow() {
             onClose={() => setTerminalOpen(false)} 
             height={terminalHeight}
             onResize={handleTerminalResize}
+            onExpand={handleTerminalExpand}
           />
         </div>
         

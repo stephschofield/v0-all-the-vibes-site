@@ -314,14 +314,14 @@ function TopicRequestsLayout() {
       className="flex flex-col flex-1 overflow-hidden"
       style={{ background: 'var(--ide-bg)' }}
     >
-      {/* Simple Browser - Takes 80% of height */}
-      <div className="flex-1 p-2" style={{ height: '80%', minHeight: 0 }}>
+      {/* Simple Browser - Takes 85% of height */}
+      <div className="flex-1 p-2" style={{ height: '85%', minHeight: 0 }}>
         <SimpleBrowser showBrowserTab={false}>
-          <div className="p-4 sm:p-8 overflow-auto h-full ide-scrollable">
-            {/* Page Header */}
-            <div className="text-center mb-8">
+          <div className="p-3 sm:p-4 overflow-auto h-full ide-scrollable">
+            {/* Page Header - Compact */}
+            <div className="text-center mb-4">
               <h1 
-                className="text-3xl font-bold mb-3"
+                className="text-xl font-bold mb-1"
                 style={{ 
                   fontFamily: 'var(--font-display)',
                   color: 'var(--text-primary)',
@@ -330,30 +330,21 @@ function TopicRequestsLayout() {
                 Submit a Topic
               </h1>
               <p 
-                className="text-base"
+                className="text-sm"
                 style={{ 
                   color: 'var(--text-muted)',
                   fontFamily: 'var(--font-display)',
                 }}
               >
-                What would you like us to cover in our weekly calls?
-              </p>
-              <p 
-                className="text-sm mt-2"
-                style={{ 
-                  color: 'var(--text-muted)',
-                  fontFamily: 'var(--font-display)',
-                }}
-              >
-                All submissions are anonymous
+                What would you like us to cover? All submissions are anonymous.
               </p>
             </div>
 
             {/* Side-by-side layout: Form + Word Cloud */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 max-w-4xl mx-auto">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 max-w-4xl mx-auto">
               {/* Topic Submission Form */}
               <div>
-                <TopicSubmissionForm anonymous={true} embedded={true} />
+                <TopicSubmissionForm anonymous={true} embedded={true} compact={true} />
               </div>
               
               {/* Word Cloud of submitted topics */}
@@ -365,12 +356,12 @@ function TopicRequestsLayout() {
         </SimpleBrowser>
       </div>
 
-      {/* Code Pane - Takes 20% of height */}
+      {/* Code Pane - Takes 15% of height */}
       <div 
         className="flex overflow-auto ide-scrollable"
         style={{
-          height: '20%',
-          minHeight: '120px',
+          height: '15%',
+          minHeight: '80px',
           borderTop: '1px solid var(--ide-border)',
           fontFamily: 'var(--font-mono)',
           fontSize: 'var(--text-base)',
