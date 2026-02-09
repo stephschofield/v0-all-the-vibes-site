@@ -12,9 +12,8 @@ export interface OpenFile {
 
 const DEFAULT_FILES: OpenFile[] = [
   { name: 'welcome.md', icon: 'markdown' },
-  { name: 'upcoming-events.py', icon: 'python' },
+  { name: 'upcoming-events.js', icon: 'javascript' },
   { name: 'topic-requests.py', icon: 'python' },
-  { name: 'schedule.py', icon: 'python' },
 ]
 
 interface IDEContextType {

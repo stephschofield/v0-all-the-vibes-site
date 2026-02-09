@@ -6,14 +6,20 @@ Note: Endpoints are synchronous because DSPy's configure() has async context iss
 FastAPI runs sync endpoints in a thread pool automatically.
 """
 
+import hmac
 import os
+import logging
 from typing import Optional
 
 import httpx
 import dspy
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Depends, Security
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.security import APIKeyHeader
 from pydantic import BaseModel, Field
+
+# Logging — internal details go to logs, NOT to clients
+logger = logging.getLogger("topic-modeling")
 
 from topic_modeler import (
     ExtractThemes,
@@ -36,6 +42,16 @@ ALLOWED_ORIGINS = os.getenv(
     "ALLOWED_ORIGINS",
     "http://localhost:3000,http://app:3000"
 ).split(",")
+
+# API Key Authentication
+API_KEY = os.getenv("TOPIC_MODELING_API_KEY", "")
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+async def verify_api_key(api_key: str | None = Security(api_key_header)):
+    """Verify API key if one is configured. Skip auth if no key is set (local dev)."""
+    if API_KEY and (not api_key or not hmac.compare_digest(api_key, API_KEY)):
+        raise HTTPException(status_code=401, detail="Invalid or missing API key")
+    return api_key
 
 # Create LM instance once at module level
 # Temperature: 0.0 = deterministic, 1.0+ = creative/random
@@ -74,7 +90,6 @@ class HealthResponse(BaseModel):
     status: str
     ollama_connected: bool
     model: str
-    ollama_url: str
     temperature: float
 
 
@@ -117,12 +132,11 @@ def health_check():
         status="healthy" if ollama_ok else "degraded",
         ollama_connected=ollama_ok,
         model=MODEL,
-        ollama_url=OLLAMA_URL,
         temperature=TEMPERATURE,
     )
 
 
-@app.post("/analyze")
+@app.post("/analyze", dependencies=[Depends(verify_api_key)])
 def analyze_topics(request: TopicsAnalysisRequest):
     """
     Full topic analysis: themes, summaries, and prioritization.
@@ -138,10 +152,11 @@ def analyze_topics(request: TopicsAnalysisRequest):
             result = analyzer.analyze_topics(topics_data)
             return result
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Analysis failed: {str(e)}")
+        logger.exception("Analysis failed")
+        raise HTTPException(status_code=500, detail="Analysis failed. Please try again later.")
 
 
-@app.post("/themes")
+@app.post("/themes", dependencies=[Depends(verify_api_key)])
 def extract_themes(request: ThemeExtractionRequest):
     """
     Quick theme extraction from topic strings.
@@ -156,10 +171,11 @@ def extract_themes(request: ThemeExtractionRequest):
             result = extractor(topics=request.topics)
             return {"themes": result.themes}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Theme extraction failed: {str(e)}")
+        logger.exception("Theme extraction failed")
+        raise HTTPException(status_code=500, detail="Theme extraction failed. Please try again later.")
 
 
-@app.post("/summarize")
+@app.post("/summarize", dependencies=[Depends(verify_api_key)])
 def summarize_topic(request: SummarizeRequest):
     """
     Summarize a single topic with tags.
@@ -176,10 +192,11 @@ def summarize_topic(request: SummarizeRequest):
                 "tags": result.tags
             }
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Summarization failed: {str(e)}")
+        logger.exception("Summarization failed")
+        raise HTTPException(status_code=500, detail="Summarization failed. Please try again later.")
 
 
-@app.post("/agenda")
+@app.post("/agenda", dependencies=[Depends(verify_api_key)])
 def generate_agenda(request: AgendaRequest):
     """
     Generate a meeting agenda from topics.
@@ -196,7 +213,8 @@ def generate_agenda(request: AgendaRequest):
             )
             return {"agenda": agenda, "duration_minutes": request.duration_minutes}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Agenda generation failed: {str(e)}")
+        logger.exception("Agenda generation failed")
+        raise HTTPException(status_code=500, detail="Agenda generation failed. Please try again later.")
 
 
 @app.get("/")
@@ -204,14 +222,6 @@ def root():
     """Service info."""
     return {
         "service": "Topic Modeling",
-        "powered_by": "DSPy + Ollama",
-        "model": MODEL,
-        "ollama_url": OLLAMA_URL,
-        "endpoints": [
-            "GET /health - Health check",
-            "POST /analyze - Full topic analysis",
-            "POST /themes - Extract themes",
-            "POST /summarize - Summarize single topic",
-            "POST /agenda - Generate meeting agenda",
-        ],
+        "status": "running",
+        "version": "1.0.0",
     }

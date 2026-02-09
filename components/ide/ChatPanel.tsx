@@ -1,13 +1,52 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useRef, useEffect } from "react"
 import Image from "next/image"
 import { 
   Plus, Settings, MoreHorizontal, Maximize2, X, 
   RefreshCw, Search, Filter, PanelRight,
   Paperclip, Monitor, Code, ChevronDown, Send,
-  Sparkles, MessageSquare, Bell
+  Sparkles, MessageSquare, Bell, Check
 } from "lucide-react"
+
+const AGENTS = [
+  { name: 'Agent', shortcut: 'Ctrl+Shift+I', isHeader: true },
+  { name: 'Ask' },
+  { name: 'Plan' },
+  { name: 'divider', isDivider: true },
+  { name: 'ARIA' },
+  { name: 'AEGON' },
+  { name: 'GHOST' },
+  { name: 'beast mode' },
+  { name: 'Mayor West' },
+  { name: 'Beth' },
+  { name: 'AgentSmith' },
+  { name: 'Configure Custom Agents...', isConfig: true },
+]
+
+const MODELS = [
+  { name: 'Auto', note: '10% discount', isAuto: true },
+  { name: 'GPT-4.1', multiplier: '0x', color: '#10a37f' },
+  { name: 'GPT-4o', multiplier: '0x', color: '#10a37f' },
+  { name: 'GPT-5 mini', multiplier: '0x', color: '#10a37f' },
+  { name: 'Claude Haiku 4.5', multiplier: '0.33x', color: '#cc785c' },
+  { name: 'Claude Opus 4.5', multiplier: '3x', color: '#cc785c' },
+  { name: 'Claude Sonnet 4', multiplier: '1x', color: '#cc785c' },
+  { name: 'Claude Sonnet 4.5', multiplier: '1x', color: '#cc785c', isDefault: true },
+  { name: 'Gemini 2.5 Pro', multiplier: '1x', color: '#4285f4' },
+  { name: 'Gemini 3 Flash (Preview)', multiplier: '0.33x', color: '#4285f4' },
+  { name: 'Gemini 3 Pro (Preview)', multiplier: '1x', color: '#4285f4' },
+  { name: 'Goldeneye (Internal Only)', multiplier: '1x', color: '#888' },
+  { name: 'GPT-5', multiplier: '1x', color: '#10a37f' },
+  { name: 'GPT-5-Codex (Preview)', multiplier: '1x', color: '#10a37f' },
+  { name: 'GPT-5.1', multiplier: '1x', color: '#10a37f' },
+  { name: 'GPT-5.1-Codex', multiplier: '1x', color: '#10a37f' },
+  { name: 'GPT-5.1-Codex-Max', multiplier: '1x', color: '#10a37f' },
+  { name: 'GPT-5.1-Codex-Mini (Preview)', multiplier: '0.33x', color: '#10a37f' },
+  { name: 'GPT-5.2', multiplier: '1x', color: '#10a37f' },
+  { name: 'GPT-5.2-Codex', multiplier: '1x', color: '#10a37f' },
+  { name: 'Manage Models...', isManage: true },
+]
 
 interface ChatPanelProps {
   dynamicWidth?: number
@@ -15,6 +54,27 @@ interface ChatPanelProps {
 
 export default function ChatPanel({ dynamicWidth: _dynamicWidth }: ChatPanelProps) {
   const [inputValue, setInputValue] = useState("")
+  const [showAgentDropdown, setShowAgentDropdown] = useState(false)
+  const [showModelDropdown, setShowModelDropdown] = useState(false)
+  const [selectedAgent, setSelectedAgent] = useState("Beth")
+  const [selectedModel, setSelectedModel] = useState("Claude Sonnet 4.5")
+  
+  const agentDropdownRef = useRef<HTMLDivElement>(null)
+  const modelDropdownRef = useRef<HTMLDivElement>(null)
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    function handleClickOutside(event: MouseEvent) {
+      if (agentDropdownRef.current && !agentDropdownRef.current.contains(event.target as Node)) {
+        setShowAgentDropdown(false)
+      }
+      if (modelDropdownRef.current && !modelDropdownRef.current.contains(event.target as Node)) {
+        setShowModelDropdown(false)
+      }
+    }
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [])
 
   return (
     <div 
@@ -215,25 +275,181 @@ export default function ChatPanel({ dynamicWidth: _dynamicWidth }: ChatPanelProp
               <Monitor size={12} />
               <ChevronDown size={10} />
             </button>
-            <button 
-              className="flex items-center gap-1 px-1.5 py-1 rounded text-xs hover:bg-white/5 transition-colors"
-              style={{ color: 'var(--text-muted)' }}
-            >
-              <Code size={12} />
-              <ChevronDown size={10} />
-            </button>
-            <button 
-              className="flex items-center gap-1 px-2 py-1 rounded text-xs hover:bg-white/5 transition-colors"
-              style={{ 
-                color: 'var(--text-secondary)',
-                fontFamily: 'var(--font-display)',
-                fontSize: '10px',
-              }}
-            >
-              <Sparkles size={10} style={{ color: 'var(--accent-purple)' }} />
-              Claude Sonnet 4.5
-              <ChevronDown size={10} />
-            </button>
+            
+            {/* Agent Selector */}
+            <div className="relative" ref={agentDropdownRef}>
+              <button 
+                className="flex items-center gap-1 px-1.5 py-1 rounded text-xs hover:bg-white/5 transition-colors"
+                style={{ 
+                  color: 'var(--text-secondary)',
+                  fontFamily: 'var(--font-display)',
+                  fontSize: '11px',
+                }}
+                onClick={() => {
+                  setShowAgentDropdown(!showAgentDropdown)
+                  setShowModelDropdown(false)
+                }}
+              >
+                <Code size={12} />
+                {selectedAgent}
+                <ChevronDown size={10} />
+              </button>
+              
+              {showAgentDropdown && (
+                <div 
+                  className="absolute bottom-full left-0 mb-1 py-1 rounded-lg shadow-xl z-50 min-w-[200px]"
+                  style={{ 
+                    background: 'var(--ide-sidebar)',
+                    border: '1px solid var(--ide-border)',
+                  }}
+                >
+                  {AGENTS.map((agent, idx) => (
+                    <div key={idx}>
+                      {agent.isHeader ? (
+                        <div 
+                          className="flex items-center justify-between px-3 py-2"
+                          style={{ 
+                            color: 'var(--text-primary)',
+                            fontFamily: 'var(--font-display)',
+                            fontSize: '13px',
+                          }}
+                        >
+                          <div className="flex items-center gap-2">
+                            <Code size={14} />
+                            <span>{agent.name}</span>
+                          </div>
+                          <span 
+                            className="text-[10px]"
+                            style={{ color: 'var(--text-muted)' }}
+                          >
+                            {agent.shortcut}
+                          </span>
+                        </div>
+                      ) : agent.isDivider ? (
+                        <div className="my-1" style={{ borderTop: '1px solid var(--ide-border)' }} />
+                      ) : agent.isConfig ? (
+                        <>
+                          <div className="my-1" style={{ borderTop: '1px solid var(--ide-border)' }} />
+                          <button
+                            className="w-full text-left px-3 py-2 text-xs hover:bg-white/5 transition-colors"
+                            style={{ 
+                              color: 'var(--accent-cyan)',
+                              fontFamily: 'var(--font-display)',
+                              fontSize: '13px',
+                            }}
+                          >
+                            {agent.name}
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          className="w-full text-left px-3 py-2 text-xs hover:bg-white/5 transition-colors flex items-center gap-2"
+                          style={{ 
+                            color: 'var(--text-secondary)',
+                            fontFamily: 'var(--font-display)',
+                            fontSize: '13px',
+                            paddingLeft: agent.name === 'Ask' || agent.name === 'Plan' ? '12px' : '24px',
+                          }}
+                          onClick={() => {
+                            if (agent.name !== 'Ask' && agent.name !== 'Plan') {
+                              setSelectedAgent(agent.name)
+                            }
+                            setShowAgentDropdown(false)
+                          }}
+                        >
+                          {selectedAgent === agent.name && (
+                            <Check size={12} style={{ marginLeft: '-16px', color: 'var(--text-primary)' }} />
+                          )}
+                          {agent.name === 'Ask' && <span style={{ marginRight: '4px' }}>?</span>}
+                          {agent.name === 'Plan' && <span style={{ marginRight: '4px' }}>≡</span>}
+                          {agent.name}
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
+            {/* Model Selector */}
+            <div className="relative" ref={modelDropdownRef}>
+              <button 
+                className="flex items-center gap-1 px-2 py-1 rounded text-xs hover:bg-white/5 transition-colors"
+                style={{ 
+                  color: 'var(--text-secondary)',
+                  fontFamily: 'var(--font-display)',
+                  fontSize: '10px',
+                }}
+                onClick={() => {
+                  setShowModelDropdown(!showModelDropdown)
+                  setShowAgentDropdown(false)
+                }}
+              >
+                <Sparkles size={10} style={{ color: 'var(--accent-purple)' }} />
+                {selectedModel}
+                <ChevronDown size={10} />
+              </button>
+              
+              {showModelDropdown && (
+                <div 
+                  className="fixed py-1 rounded-lg shadow-xl z-[100] min-w-[220px] max-h-[350px] overflow-y-auto ide-scrollable"
+                  style={{ 
+                    background: 'var(--ide-sidebar)',
+                    border: '1px solid var(--ide-border)',
+                    bottom: '60px',
+                    right: '20px',
+                  }}
+                >
+                  {MODELS.map((model, idx) => (
+                    <div key={idx}>
+                      {model.isManage ? (
+                        <>
+                          <div className="my-1" style={{ borderTop: '1px solid var(--ide-border)' }} />
+                          <button
+                            className="w-full text-left px-2 py-1 hover:bg-white/5 transition-colors"
+                            style={{ 
+                              color: 'var(--accent-cyan)',
+                              fontFamily: 'var(--font-display)',
+                              fontSize: '11px',
+                            }}
+                          >
+                            {model.name}
+                          </button>
+                        </>
+                      ) : (
+                        <button
+                          className="w-full text-left px-2 py-1 hover:bg-white/5 transition-colors flex items-center justify-between"
+                          style={{ 
+                            fontFamily: 'var(--font-display)',
+                            fontSize: '11px',
+                          }}
+                          onClick={() => {
+                            setSelectedModel(model.name)
+                            setShowModelDropdown(false)
+                          }}
+                        >
+                          <div className="flex items-center gap-1.5">
+                            {selectedModel === model.name && (
+                              <Check size={10} style={{ color: 'var(--text-primary)' }} />
+                            )}
+                            <span style={{ 
+                              color: model.color || 'var(--text-secondary)',
+                              marginLeft: selectedModel === model.name ? 0 : '14px',
+                            }}>
+                              {model.name}
+                            </span>
+                          </div>
+                          <span style={{ color: 'var(--text-muted)', fontSize: '10px' }}>
+                            {model.note || model.multiplier}
+                          </span>
+                        </button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            
             <button 
               className="p-1 rounded hover:bg-white/5 transition-colors"
               style={{ color: 'var(--text-muted)' }}

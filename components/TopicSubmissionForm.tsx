@@ -60,6 +60,18 @@ export function TopicSubmissionForm({ anonymous = false, embedded = false, compa
 
   return (
     <form action={formAction} className={spacing}>
+      {/* Honeypot field — hidden from users, catches bots */}
+      <div aria-hidden="true" tabIndex={-1} style={{ position: 'absolute', left: '-9999px', height: 0, overflow: 'hidden' }}>
+        <label htmlFor="website">Website</label>
+        <input
+          type="text"
+          id="website"
+          name="website"
+          tabIndex={-1}
+          autoComplete="off"
+        />
+      </div>
+
       {!anonymous && (
         <div>
           <label htmlFor="name" className={labelClasses} style={embedded ? { color: 'var(--text-secondary)' } : undefined}>
@@ -85,7 +97,7 @@ export function TopicSubmissionForm({ anonymous = false, embedded = false, compa
           name="topic"
           required
           className={inputClasses}
-          placeholder="e.g., Advanced TypeScript patterns"
+          placeholder="E.g. ralph set up, claude code plugins"
         />
       </div>
 

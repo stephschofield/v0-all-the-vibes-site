@@ -1,14 +1,17 @@
 'use server';
 
-import { getSupabase } from '@/lib/db';
+import { getSupabase, getSupabaseAdmin } from '@/lib/db';
 import { revalidatePath } from 'next/cache';
 import { headers } from 'next/headers';
 import { z } from 'zod';
+import { timingSafeEqual } from 'crypto';
 
+/**
+ * Full topic record (internal/admin use only — includes PII).
+ */
 export type TopicSubmission = {
   id: number;
   name: string | null;
-  email: string | null;
   topic: string;
   description: string | null;
   priority: string;
@@ -29,7 +32,32 @@ const TopicSchema = z.object({
   priority: z.enum(['low', 'medium', 'high']).default('medium'),
 });
 
+/**
+ * Constant-time string comparison to prevent timing attacks.
+ */
+function secureCompare(a: string, b: string): boolean {
+  try {
+    const bufA = Buffer.from(a);
+    const bufB = Buffer.from(b);
+    if (bufA.length !== bufB.length) {
+      // Compare against self to maintain constant time even on length mismatch
+      timingSafeEqual(bufA, bufA);
+      return false;
+    }
+    return timingSafeEqual(bufA, bufB);
+  } catch {
+    return false;
+  }
+}
+
 export async function submitTopic(formData: FormData): Promise<SubmitResult> {
+  // Honeypot bot detection — hidden field should be empty
+  const honeypot = formData.get('website');
+  if (honeypot) {
+    // Silently reject bots — return fake success so they don't adapt
+    return { success: true, topicId: 0 };
+  }
+
   // Convert null to empty string for Zod validation
   const raw = {
     name: formData.get('name') ?? '',
@@ -61,7 +89,7 @@ export async function submitTopic(formData: FormData): Promise<SubmitResult> {
     if (error) throw error;
 
     // Post to Discord webhook (fire and forget - don't block on failure)
-    notifyDiscord(parsed.data).catch(err => 
+    notifyDiscord(parsed.data).catch(err =>
       console.error('Discord notification failed:', err)
     );
 
@@ -105,7 +133,7 @@ async function notifyDiscord(topic: {
         fields: [
           ...(topic.description ? [{ name: 'Description', value: topic.description.slice(0, 200) + (topic.description.length > 200 ? '...' : '') }] : []),
           { name: 'Priority', value: `${priorityEmoji[topic.priority] || '🟡'} ${topic.priority}`, inline: true },
-          { name: 'Submitted by', value: topic.name, inline: true },
+          { name: 'Submitted by', value: topic.name.slice(0, 100), inline: true },
         ],
         timestamp: new Date().toISOString(),
         footer: { text: 'All The Vibes Community' },
@@ -114,12 +142,15 @@ async function notifyDiscord(topic: {
   });
 }
 
+/**
+ * Get topics for public display — does NOT include email (PII).
+ */
 export async function getTopics(): Promise<TopicSubmission[]> {
   try {
     const supabase = getSupabase();
     const { data, error } = await supabase
       .from('topic_requests')
-      .select('id, name, email, topic, description, priority, created_at')
+      .select('id, name, topic, description, priority, created_at')
       .order('created_at', { ascending: false });
 
     if (error) throw error;
@@ -166,22 +197,25 @@ export async function getTopicWords(): Promise<{ word: string; count: number }[]
 }
 
 export async function clearAllTopics(): Promise<{ success: boolean; deleted: number; error?: string }> {
-  // Authentication check - require admin key
+  // Authentication check - require admin key with timing-safe comparison
   const headersList = await headers();
   const adminKey = headersList.get('x-admin-key');
+  const expectedKey = process.env.ADMIN_SECRET_KEY;
 
-  if (!adminKey || adminKey !== process.env.ADMIN_SECRET_KEY) {
+  if (!adminKey || !expectedKey || !secureCompare(adminKey, expectedKey)) {
+    console.warn('Failed admin authentication attempt for clearAllTopics');
     return { success: false, deleted: 0, error: 'Unauthorized' };
   }
 
   try {
-    const supabase = getSupabase();
-    
+    // Use admin client for destructive operations (requires service role key)
+    const supabase = getSupabaseAdmin();
+
     // Get count first
     const { count } = await supabase
       .from('topic_requests')
       .select('*', { count: 'exact', head: true });
-    
+
     // Delete all
     const { error } = await supabase
       .from('topic_requests')
@@ -194,6 +228,6 @@ export async function clearAllTopics(): Promise<{ success: boolean; deleted: num
     return { success: true, deleted: count || 0 };
   } catch (error) {
     console.error('Failed to clear topics:', error);
-    return { success: false, deleted: 0, error: String(error) };
+    return { success: false, deleted: 0, error: 'Operation failed. Please try again.' };
   }
 }

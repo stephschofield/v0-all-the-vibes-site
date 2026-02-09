@@ -10,9 +10,15 @@
 
 services:
   app:
-    build: .
+    build:
+      context: .
+      args:
+        - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
+        - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
     ports:
       - "3000:3000"
+    env_file:
+      - .env.local
     environment:
       # Default credentials - LOCAL DEV ONLY
       - DATABASE_URL=postgresql://postgres:postgres@db:5432/vibes
@@ -32,6 +38,7 @@ services:
       - OLLAMA_URL=http://ollama:11434
       - OLLAMA_MODEL=llama3.2
       - OLLAMA_TEMPERATURE=0.3
+      - TOPIC_MODELING_API_KEY=${TOPIC_MODELING_API_KEY:-}
     depends_on:
       ollama:
         condition: service_started

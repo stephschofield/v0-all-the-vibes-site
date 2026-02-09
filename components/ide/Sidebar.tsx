@@ -5,7 +5,7 @@ import {
   ChevronRight, ChevronDown, Folder, FolderOpen,
   FileText, FileCode, Settings 
 } from "lucide-react"
-import { useIDE } from "./IDEContext"
+import { useIDE, OpenFile } from "./IDEContext"
 
 interface FileItem {
   name: string
@@ -21,13 +21,9 @@ const fileTree: FileItem[] = [
     expanded: true,
     children: [
       { name: 'welcome.md', type: 'markdown' },
-      { name: 'upcoming-events.py', type: 'python' },
-      { name: 'schedule.py', type: 'python' },
+      { name: 'upcoming-events.js', type: 'javascript' },
       { name: 'vibe-a-thon.py', type: 'python' },
       { name: 'topic-requests.py', type: 'python' },
-      { name: 'sponsor-info.md', type: 'markdown' },
-      { name: 'sponsors.yaml', type: 'yaml' },
-      { name: 'tickets.config.js', type: 'javascript' },
     ]
   }
 ]
@@ -56,9 +52,19 @@ interface FileTreeNodeProps {
   setSize: number
 }
 
+// Map file types to icon types for OpenFile
+const fileTypeToIcon = (type: string): OpenFile['icon'] => {
+  switch (type) {
+    case 'markdown': return 'markdown'
+    case 'python': return 'python'
+    case 'javascript': return 'javascript'
+    default: return 'javascript'
+  }
+}
+
 function FileTreeNode({ item, depth, index, setSize }: FileTreeNodeProps) {
   const [expanded, setExpanded] = useState(item.expanded ?? false)
-  const { activeFile, setActiveFile } = useIDE()
+  const { activeFile, openFile } = useIDE()
   const isFolder = item.type === 'folder'
   const isActive = !isFolder && item.name === activeFile
   const level = depth + 1 // aria-level is 1-based
@@ -67,9 +73,9 @@ function FileTreeNode({ item, depth, index, setSize }: FileTreeNodeProps) {
     if (isFolder) {
       setExpanded(prev => !prev)
     } else {
-      setActiveFile(item.name)
+      openFile({ name: item.name, icon: fileTypeToIcon(item.type) })
     }
-  }, [isFolder, setActiveFile, item.name])
+  }, [isFolder, openFile, item.name, item.type])
 
   const handleKeyDown = useCallback((e: KeyboardEvent<HTMLButtonElement>) => {
     switch (e.key) {

@@ -14,7 +14,7 @@ export default function EditorPane() {
   const { activeFile } = useIDE()
 
   // Upcoming events gets special split layout
-  if (activeFile === 'upcoming-events.py') {
+  if (activeFile === 'upcoming-events.js') {
     return <UpcomingEventsLayout />
   }
 
@@ -61,11 +61,7 @@ export default function EditorPane() {
       {/* Editor Content */}
       <div className="flex-1 p-3 sm:p-6 overflow-auto ide-scrollable">
         {activeFile === 'welcome.md' && <WelcomeContent />}
-        {activeFile === 'schedule.py' && <PlaceholderContent filename={activeFile} />}
         {activeFile === 'vibe-a-thon.py' && <PlaceholderContent filename={activeFile} />}
-        {activeFile === 'sponsor-info.md' && <PlaceholderContent filename={activeFile} />}
-        {activeFile === 'sponsors.yaml' && <PlaceholderContent filename={activeFile} />}
-        {activeFile === 'tickets.config.js' && <PlaceholderContent filename={activeFile} />}
       </div>
     </div>
   )
@@ -262,48 +258,48 @@ function UpcomingEventsLayout() {
 function UpcomingEventsCode() {
   return (
     <div style={{ fontSize: '12px', lineHeight: '20px' }}>
-      <CodeLine><SyntaxSpan type="comment">{'# upcoming-events.py'}</SyntaxSpan></CodeLine>
+      <CodeLine><SyntaxSpan type="comment">{'// upcoming-events.js'}</SyntaxSpan></CodeLine>
       <CodeLine>
-        <SyntaxSpan type="keyword">events</SyntaxSpan>
+        <SyntaxSpan type="keyword">const</SyntaxSpan>
+        <SyntaxSpan type="punctuation">{' '}</SyntaxSpan>
+        <SyntaxSpan type="variable">events</SyntaxSpan>
         <SyntaxSpan type="punctuation">{' = ['}</SyntaxSpan>
       </CodeLine>
       <CodeLine indent={1}>
         <SyntaxSpan type="punctuation">{'{'}</SyntaxSpan>
-        <SyntaxSpan type="string">{'"name"'}</SyntaxSpan>
+        <SyntaxSpan type="property">{' name'}</SyntaxSpan>
         <SyntaxSpan type="punctuation">{': '}</SyntaxSpan>
         <SyntaxSpan type="string">{'"All The Vibes @ Tech Connect"'}</SyntaxSpan>
         <SyntaxSpan type="punctuation">{', '}</SyntaxSpan>
-        <SyntaxSpan type="string">{'"date"'}</SyntaxSpan>
+        <SyntaxSpan type="property">{'date'}</SyntaxSpan>
         <SyntaxSpan type="punctuation">{': '}</SyntaxSpan>
         <SyntaxSpan type="string">{'"2026-02-10"'}</SyntaxSpan>
-        <SyntaxSpan type="punctuation">{'}'}</SyntaxSpan>
-        <SyntaxSpan type="punctuation">{','}</SyntaxSpan>
+        <SyntaxSpan type="punctuation">{' },'}</SyntaxSpan>
       </CodeLine>
       <CodeLine indent={1}>
         <SyntaxSpan type="punctuation">{'{'}</SyntaxSpan>
-        <SyntaxSpan type="string">{'"name"'}</SyntaxSpan>
+        <SyntaxSpan type="property">{' name'}</SyntaxSpan>
         <SyntaxSpan type="punctuation">{': '}</SyntaxSpan>
         <SyntaxSpan type="string">{'"Hack and Furious Call"'}</SyntaxSpan>
         <SyntaxSpan type="punctuation">{', '}</SyntaxSpan>
-        <SyntaxSpan type="string">{'"schedule"'}</SyntaxSpan>
+        <SyntaxSpan type="property">{'schedule'}</SyntaxSpan>
         <SyntaxSpan type="punctuation">{': '}</SyntaxSpan>
         <SyntaxSpan type="string">{'"Tuesdays 10am CT"'}</SyntaxSpan>
-        <SyntaxSpan type="punctuation">{'}'}</SyntaxSpan>
-        <SyntaxSpan type="punctuation">{','}</SyntaxSpan>
+        <SyntaxSpan type="punctuation">{' },'}</SyntaxSpan>
       </CodeLine>
       <CodeLine indent={1}>
         <SyntaxSpan type="punctuation">{'{'}</SyntaxSpan>
-        <SyntaxSpan type="string">{'"name"'}</SyntaxSpan>
+        <SyntaxSpan type="property">{' name'}</SyntaxSpan>
         <SyntaxSpan type="punctuation">{': '}</SyntaxSpan>
         <SyntaxSpan type="string">{'"All The Vibes Community Call"'}</SyntaxSpan>
         <SyntaxSpan type="punctuation">{', '}</SyntaxSpan>
-        <SyntaxSpan type="string">{'"schedule"'}</SyntaxSpan>
+        <SyntaxSpan type="property">{'schedule'}</SyntaxSpan>
         <SyntaxSpan type="punctuation">{': '}</SyntaxSpan>
         <SyntaxSpan type="string">{'"Fridays 11am CT"'}</SyntaxSpan>
-        <SyntaxSpan type="punctuation">{'}'}</SyntaxSpan>
+        <SyntaxSpan type="punctuation">{' }'}</SyntaxSpan>
       </CodeLine>
       <CodeLine>
-        <SyntaxSpan type="punctuation">{']'}</SyntaxSpan>
+        <SyntaxSpan type="punctuation">{'];'}</SyntaxSpan>
       </CodeLine>
     </div>
   )

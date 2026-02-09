@@ -2,7 +2,7 @@
 
 > *"I don't have time to explain things twice. Read this."*
 
-Last updated: January 27, 2026
+Last updated: February 9, 2026
 
 ---
 
@@ -36,6 +36,17 @@ Last updated: January 27, 2026
 | **Color contrast improvements** | syntax-comment, text-muted, gutter, muted-foreground all ≥4.5:1 |
 | **Terminal easter egg** | Interactive ASCII banner on `npx @vibes/cli init` with typewriter animation |
 | **ASCII banner redesign** | New d8888 font with orange→purple and cyan→teal gradient, web-safe characters |
+| **Security audit (initial)** | OWASP Top 10 review: found 2 critical, 5 high, 6 medium, 4 low issues |
+| **CRITICAL: PII exposure fix** | Removed email from getTopics() — no longer shipped to clients |
+| **CRITICAL: Supabase client split** | getSupabase() uses anon key (RLS), getSupabaseAdmin() for admin ops only |
+| **HIGH: Security headers** | CSP, HSTS, X-Frame-Options, X-Content-Type-Options, Referrer-Policy, Permissions-Policy |
+| **HIGH: Timing-safe admin auth** | crypto.timingSafeEqual for admin key comparison, failed attempt logging |
+| **HIGH: Error message hardening** | Generic errors in Python service + clearAllTopics, internal logging only |
+| **HIGH: Topic modeling auth** | API key authentication on all POST endpoints, timing-safe comparison |
+| **MEDIUM: Honeypot bot detection** | Hidden website field in form, server-side silent rejection |
+| **MEDIUM: Docker non-root user** | topic-modeling Dockerfile runs as appuser:appgroup (1001:1001) |
+| **MEDIUM: CSP tightened** | Removed unsafe-eval, added form-action/base-uri directives |
+| **Security re-audit** | Verified all fixes. 0 critical, 0 high remaining from original findings |
 
 ---
 
@@ -62,6 +73,14 @@ Last updated: January 27, 2026
 - [ ] **Chat panel functionality** — ChatPanel.tsx needs actual AI integration or mock
 - [ ] **Mobile responsiveness** — IDE metaphor on small screens needs consideration
 - [ ] **Set up testing** — Add Vitest or Jest for component testing
+
+### Medium Priority (P2) — Security Hardening
+
+- [ ] **Distributed rate limiting** — Replace in-memory Map with Upstash Redis; cover Server Actions (HIGH-001)
+- [ ] **Audit logging** — Structured audit trail for admin actions, data mutations (MEDIUM-004)
+- [ ] **Pin Python dependencies** — Lock exact versions in requirements.txt (MEDIUM-005)
+- [ ] **CI/CD security scanning** — npm audit, SAST in GitHub Actions (LOW-004)
+- [ ] **IP identification fix** — Use request.ip on Vercel instead of x-forwarded-for (MEDIUM-001)
 
 ### Low Priority (P3) — Polish
 
@@ -115,6 +134,9 @@ components/
 | Use Beth orchestrator | Coordinated multi-agent workflows | Jan 25, 2026 |
 | VS Code-style UI | IDE metaphor for developer community site | Pre-existing |
 | shadcn/ui new-york style | Configured in components.json | Pre-existing |
+| Split Supabase clients | Anon key for public (RLS), service role for admin only | Feb 9, 2026 |
+| Security headers via Next.js | CSP, HSTS, X-Frame-Options, Permissions-Policy | Feb 9, 2026 |
+| Timing-safe auth | crypto.timingSafeEqual / hmac.compare_digest for all secret comparisons | Feb 9, 2026 |
 
 ---
 
@@ -139,12 +161,17 @@ Fully functional VS Code-themed community site for "All The Vibes Community" —
 - ✅ All P1 accessibility issues resolved (ARIA labels, semantics, contrast)
 - ✅ ESLint warnings cleared (0 warnings)
 - ✅ Color contrast ratios meet WCAG 4.5:1 standards
+- ✅ Security audit complete — 0 critical, 0 high remaining
+- ✅ PII exposure fixed, Supabase clients split, security headers added
+- ✅ Timing-safe auth, honeypot bot protection, Docker non-root
 
 **What's Coming:**
 
-1. P2 feature enhancements (real content, functional terminal, chat)
-2. Mobile responsiveness
-3. Testing setup
+1. Distributed rate limiting (Upstash Redis)
+2. Audit logging infrastructure
+3. P2 feature enhancements (real content, functional terminal, chat)
+4. Mobile responsiveness
+5. Testing setup
 
 **Blockers:** None.
 

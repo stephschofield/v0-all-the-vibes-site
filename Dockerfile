@@ -29,6 +29,10 @@ RUN corepack enable && corepack prepare pnpm@latest --activate
 COPY --from=deps /app/node_modules ./node_modules
 COPY . .
 
+# Build args for NEXT_PUBLIC_* vars (needed at build time)
+ARG NEXT_PUBLIC_SUPABASE_URL
+ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
+
 # Build the Next.js application
 RUN pnpm build
 
