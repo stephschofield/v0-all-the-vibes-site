@@ -47,6 +47,9 @@ Last updated: February 9, 2026
 | **MEDIUM: Docker non-root user** | topic-modeling Dockerfile runs as appuser:appgroup (1001:1001) |
 | **MEDIUM: CSP tightened** | Removed unsafe-eval, added form-action/base-uri directives |
 | **Security re-audit** | Verified all fixes. 0 critical, 0 high remaining from original findings |
+| **Pin Python dependencies** | Exact versions (==) in both requirements.txt files — supply chain protection |
+| **CI/CD security scanning** | GitHub Actions workflow: pnpm audit, ESLint, tsc, build verify, pip-audit |
+| **IP identification fix** | Middleware uses x-real-ip (Vercel edge, trusted) over x-forwarded-for (spoofable) |
 
 ---
 
@@ -78,9 +81,6 @@ Last updated: February 9, 2026
 
 - [ ] **Distributed rate limiting** — Replace in-memory Map with Upstash Redis; cover Server Actions (HIGH-001)
 - [ ] **Audit logging** — Structured audit trail for admin actions, data mutations (MEDIUM-004)
-- [ ] **Pin Python dependencies** — Lock exact versions in requirements.txt (MEDIUM-005)
-- [ ] **CI/CD security scanning** — npm audit, SAST in GitHub Actions (LOW-004)
-- [ ] **IP identification fix** — Use request.ip on Vercel instead of x-forwarded-for (MEDIUM-001)
 
 ### Low Priority (P3) — Polish
 

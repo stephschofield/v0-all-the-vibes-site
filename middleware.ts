@@ -29,8 +29,10 @@ function getRateLimitInfo(ip: string): { allowed: boolean; remaining: number } {
 export function middleware(request: NextRequest) {
   // Only rate limit API routes
   if (request.nextUrl.pathname.startsWith('/api/')) {
-    const ip = request.headers.get('x-forwarded-for')?.split(',')[0] ?? 
-               request.headers.get('x-real-ip') ?? 
+    // Prefer x-real-ip (set by Vercel's edge — trusted, not client-spoofable).
+    // Fall back to x-forwarded-for for local dev only.
+    const ip = request.headers.get('x-real-ip') ?? 
+               request.headers.get('x-forwarded-for')?.split(',')[0] ?? 
                'anonymous';
     
     const { allowed, remaining } = getRateLimitInfo(ip);

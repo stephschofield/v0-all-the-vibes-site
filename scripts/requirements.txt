@@ -1,7 +1,7 @@
 # Requirements for standalone scripts
 # Install with: pip install -r scripts/requirements.txt
 
-dspy-ai>=2.5.0
-httpx>=0.26.0
-supabase>=2.0.0  # Optional: only needed for --from-db
-python-dotenv>=1.0.0
+dspy-ai==2.5.0
+httpx==0.26.0
+supabase==2.0.0  # Optional: only needed for --from-db
+python-dotenv==1.0.0
