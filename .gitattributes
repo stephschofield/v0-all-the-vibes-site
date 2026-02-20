@@ -1,3 +1,5 @@
+# Force LF line endings — prevents CRLF disasters in WSL/Windows crossover
+* text=auto eol=lf
 
 # Use bd merge for beads JSONL files
 .beads/issues.jsonl merge=beads

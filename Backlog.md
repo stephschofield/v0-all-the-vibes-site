@@ -51,6 +51,11 @@ Last updated: February 20, 2026
 | **CI/CD security scanning** | GitHub Actions workflow: pnpm audit, ESLint, tsc, build verify, pip-audit |
 | **IP identification fix** | Middleware uses x-real-ip (Vercel edge, trusted) over x-forwarded-for (spoofable) |
 | **Fix .git ownership + sparse checkout (again)** | .git/ was owned by root, sparse checkout re-enabled with broken patterns, destructive commit f55a208 wiped all source. Fixed ownership, disabled sparse checkout, repo recovered via upstream PR merges (Feb 20, 2026) |
+| **Forensic investigation: destructive commit** | Root cause: git-ai wrapper + sparse checkout + CRLF conversion. Sparse checkout hid dirs → `git add -A` staged deletions → AI-generated commit message made it look intentional. Full chain of events documented. |
+| **Preventive: .gitattributes LF enforcement** | Added `* text=auto eol=lf` to prevent CRLF disasters in WSL/Windows crossover |
+| **Preventive: remove rogue sparse-checkout** | Deleted `.git/info/sparse-checkout` with beth.git URL patterns from bd (beads) |
+| **Preventive: .gitignore fixes** | Fixed concatenation bug (ehthumbs.db__pycache__/), added *.pyc/*.pyo patterns, verified __pycache__/ present |
+| **Preventive: git-ai assessment** | No hooks in repo — global install at ~/.git-ai/ only. Removal is user decision (system-wide, not repo-scoped) |
 
 ---
 
