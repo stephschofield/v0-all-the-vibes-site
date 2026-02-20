@@ -7,6 +7,7 @@ interface OSBackgroundProps {
 }
 
 export default function OSBackground({ children }: OSBackgroundProps) {
+  console.log("[v0] OSBackground rendering")
   return (
     <div className="relative w-screen h-screen overflow-hidden flex items-center justify-center">
       {/* Animated gradient mesh */}
