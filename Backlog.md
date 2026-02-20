@@ -2,7 +2,7 @@
 
 > *"I don't have time to explain things twice. Read this."*
 
-Last updated: February 9, 2026
+Last updated: February 20, 2026
 
 ---
 
@@ -50,6 +50,7 @@ Last updated: February 9, 2026
 | **Pin Python dependencies** | Exact versions (==) in both requirements.txt files — supply chain protection |
 | **CI/CD security scanning** | GitHub Actions workflow: pnpm audit, ESLint, tsc, build verify, pip-audit |
 | **IP identification fix** | Middleware uses x-real-ip (Vercel edge, trusted) over x-forwarded-for (spoofable) |
+| **Fix .git ownership + sparse checkout (again)** | .git/ was owned by root, sparse checkout re-enabled with broken patterns, destructive commit f55a208 wiped all source. Fixed ownership, disabled sparse checkout, repo recovered via upstream PR merges (Feb 20, 2026) |
 
 ---
 
