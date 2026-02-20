@@ -6,6 +6,9 @@ const nextConfig = {
     unoptimized: true,
   },
   async headers() {
+    // Security headers apply in production only — CSP blocks Turbopack eval() in dev
+    if (process.env.NODE_ENV !== 'production') return [];
+
     return [
       {
         source: '/:path*',

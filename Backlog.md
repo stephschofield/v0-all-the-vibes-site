@@ -63,6 +63,14 @@ Last updated: February 20, 2026
 
 ---
 
+## Recently Fixed
+
+| Fix | Root Cause |
+| --- | --- |
+| **CSP blocking dev mode** | `script-src` in next.config.mjs headers blocked Turbopack eval() → React hydration failure → blank page. Headers now production-only. |
+
+---
+
 ## On Hold
 
 - [ ] **Real calendar event data** — Replace hardcoded events with actual calendar data from user's Microsoft Calendar (.ics export)
