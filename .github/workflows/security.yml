@@ -78,28 +78,3 @@ jobs:
 
       - name: Build
         run: pnpm build
-        env:
-          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL || 'https://placeholder.supabase.co' }}
-          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY || 'placeholder' }}
-
-  python-security:
-    name: Python Security Check
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Setup Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install pip-audit
-        run: pip install pip-audit
-
-      - name: Audit topic-modeling dependencies
-        run: pip-audit -r services/topic-modeling/requirements.txt
-        continue-on-error: true
-
-      - name: Audit script dependencies
-        run: pip-audit -r scripts/requirements.txt
-        continue-on-error: true

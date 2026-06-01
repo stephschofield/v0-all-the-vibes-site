@@ -3,108 +3,53 @@
 ## Prerequisites
 
 - Node.js 18+ and pnpm
-- Python 3.11+
-- Docker Desktop (for Ollama and Postgres)
 - Git
+
+The site is currently a static community/event hub with no backend services, database, or external integrations, so no Docker, Python, or environment variables are required to run it locally.
 
 ---
 
-## Quick Start (Full Stack with Docker)
-
-The easiest way to run everything:
+## Quick Start
 
 ```bash
-# Start all services (Ollama, Postgres, Topic Modeling, Next.js app)
-docker-compose up -d
+# Install dependencies
+pnpm install
 
-# Pull the LLM model (first time only)
-docker exec -it v0-all-the-vibes-site-ollama-1 ollama pull llama3.2
+# Start the dev server
+pnpm dev
 ```
 
 Access the app at http://localhost:3000
 
 ---
 
-## Manual Setup (Development Mode)
-
-### 1. Frontend (Next.js)
+## Common Commands
 
 ```bash
-# Install dependencies
-pnpm install
-
-# Start dev server
-pnpm dev
+pnpm dev      # Start development server
+pnpm build    # Production build
+pnpm start    # Run the production build locally
+pnpm lint     # Run ESLint
 ```
-
-Access at http://localhost:3000
-
-### 2. Ollama (LLM Backend)
-
-**Option A: Docker (Recommended)**
-
-```bash
-# Start Ollama container
-docker-compose up ollama -d
-
-# Pull the model (first time only)
-docker exec -it v0-all-the-vibes-site-ollama-1 ollama pull llama3.2
-
-# Verify it's running
-curl http://localhost:11434/api/tags
-```
-
-**Option B: Native Install**
-
-1. Download from https://ollama.com
-2. Launch Ollama from Start Menu (Windows) or run `ollama serve`
-3. Pull model: `ollama pull llama3.2`
-
-### 3. Topic Modeling Service (Python/FastAPI)
-
-```bash
-# Install Python dependencies
-cd services/topic-modeling
-pip install -r requirements.txt
-
-# Set Ollama URL (use localhost if running Ollama natively or via Docker)
-export OLLAMA_URL=http://localhost:11434
-
-# Start the service
-python -m uvicorn main:app --reload --port 8000
-```
-
-Access API docs at http://localhost:8000/docs
-
-### 4. Database (Postgres with pgvector)
-
-```bash
-# Start Postgres container
-docker-compose up db -d
-```
-
-Connection string: `postgresql://postgres:postgres@localhost:5432/vibes`
 
 ---
 
-## Environment Variables
+## Docker (optional)
 
-Create `.env.local` in the project root:
+A production `Dockerfile` is included (Next.js standalone output) for container deployments:
 
-```env
-# Database
-DATABASE_URL=postgresql://postgres:postgres@localhost:5432/vibes
+```bash
+# Build the image
+docker build -t all-the-vibes-site .
 
-# Supabase (if using)
-NEXT_PUBLIC_SUPABASE_URL=your_supabase_url
-NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
+# Run it
+docker run -p 3000:3000 all-the-vibes-site
+```
 
-# Topic Modeling Service
-TOPIC_MODELING_URL=http://localhost:8000
+`docker-compose.yml` runs the same app container locally:
 
-# Ollama (for topic-modeling service)
-OLLAMA_URL=http://localhost:11434
-OLLAMA_MODEL=llama3.2
+```bash
+docker-compose up -d
 ```
 
 ---
@@ -114,35 +59,17 @@ OLLAMA_MODEL=llama3.2
 ### Port Already in Use
 
 ```bash
-# Kill all node processes and free port 3000
-powershell -Command "Stop-Process -Id (Get-NetTCPConnection -LocalPort 3000).OwningProcess -Force"
-
-# Or kill specific process
-taskkill /F /PID <process_id>
+# Find and kill the process on port 3000 (macOS/Linux)
+lsof -ti:3000 | xargs kill -9
 ```
 
-### Next.js Lock File Error
+### Next.js Build/Cache Error
 
 ```bash
-# Delete .next folder and restart
+# Delete the .next folder and restart
 rm -rf .next
 pnpm dev
 ```
-
-### Ollama Connection Refused
-
-1. Ensure Docker Desktop is running
-2. Start Ollama: `docker-compose up ollama -d`
-3. Verify: `curl http://localhost:11434/api/tags`
-
-### Topic Modeling 500 Errors
-
-Check the health endpoint:
-```bash
-curl http://localhost:8000/health
-```
-
-If `ollama_connected: false`, Ollama isn't running or the URL is wrong.
 
 ---
 
@@ -151,36 +78,14 @@ If `ollama_connected: false`, Ollama isn't running or the URL is wrong.
 | Service | URL |
 |---------|-----|
 | Frontend | http://localhost:3000 |
-| Topic Modeling API | http://localhost:8000 |
-| Topic Modeling Docs | http://localhost:8000/docs |
-| Ollama | http://localhost:11434 |
-| Postgres | localhost:5432 |
 
 ---
 
 ## Stopping Services
 
 ```bash
-# Stop all Docker services
+# Stop Next.js: Ctrl+C in the terminal
+
+# Stop Docker (if used)
 docker-compose down
-
-# Stop Next.js: Ctrl+C in terminal
-
-# Stop Topic Modeling: Ctrl+C in terminal
 ```
-
----
-
-## Full Docker Stack
-
-To run everything in Docker (no local Node/Python needed):
-
-```bash
-docker-compose up -d
-```
-
-This starts:
-- `app` - Next.js frontend (port 3000)
-- `topic-modeling` - FastAPI service (port 8000)
-- `ollama` - LLM backend (port 11434)
-- `db` - Postgres with pgvector (port 5432)
