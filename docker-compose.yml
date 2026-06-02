@@ -1,77 +1,11 @@
 # =============================================================================
-# LOCAL DEVELOPMENT ONLY - DO NOT USE IN PRODUCTION
-# =============================================================================
-# This file contains default credentials for local development.
-# For production deployments:
-#   1. Use environment variables or secrets management
-#   2. Never use default passwords
-#   3. See .env.example for required configuration
+# Local container run for the All The Vibes site (static Next.js app).
+# The app currently requires no environment variables or backing services.
 # =============================================================================
 
 services:
   app:
     build:
       context: .
-      args:
-        - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
-        - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
     ports:
       - "3000:3000"
-    env_file:
-      - .env.local
-    environment:
-      # Default credentials - LOCAL DEV ONLY
-      - DATABASE_URL=postgresql://postgres:postgres@db:5432/vibes
-      - OLLAMA_URL=http://ollama:11434
-      - TOPIC_MODELING_URL=http://topic-modeling:8000
-    depends_on:
-      db:
-        condition: service_healthy
-      ollama:
-        condition: service_started
-
-  topic-modeling:
-    build: ./services/topic-modeling
-    ports:
-      - "8000:8000"
-    environment:
-      - OLLAMA_URL=http://ollama:11434
-      - OLLAMA_MODEL=llama3.2
-      - OLLAMA_TEMPERATURE=0.3
-      - TOPIC_MODELING_API_KEY=${TOPIC_MODELING_API_KEY:-}
-    depends_on:
-      ollama:
-        condition: service_started
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-
-  db:
-    image: pgvector/pgvector:pg16
-    environment:
-      # Default credentials - LOCAL DEV ONLY, change for any shared environment
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
-      POSTGRES_DB: vibes
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-    ports:
-      - "5432:5432"
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres"]
-      interval: 5s
-      timeout: 5s
-      retries: 5
-
-  ollama:
-    image: ollama/ollama:latest
-    volumes:
-      - ollama_data:/root/.ollama
-    ports:
-      - "11434:11434"
-
-volumes:
-  postgres_data:
-  ollama_data:

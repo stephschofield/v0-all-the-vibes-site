@@ -23,7 +23,6 @@ const fileTree: FileItem[] = [
       { name: 'welcome.md', type: 'markdown' },
       { name: 'upcoming-events.js', type: 'javascript' },
       { name: 'vibe-a-thon.py', type: 'python' },
-      { name: 'topic-requests.py', type: 'python' },
     ]
   }
 ]

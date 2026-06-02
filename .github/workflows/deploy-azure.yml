@@ -1,0 +1,60 @@
+name: Deploy to Azure Container Apps
+
+# Replaces Vercel auto-deploy. On every push to main, builds the image in ACR
+# and rolls it out to the Container App. Auth uses OIDC federated credentials
+# (no stored secrets / passwords).
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  id-token: write   # required for OIDC federated login
+  contents: read
+
+env:
+  AZURE_CLIENT_ID: 8a4a411b-4f52-4638-896b-b4103ced3d76      # id-allthevibes-deploy
+  AZURE_TENANT_ID: 16b3c013-d300-468d-ac64-7eda0820b6d3      # Microsoft Non-Production
+  AZURE_SUBSCRIPTION_ID: ba7e3331-8922-4ac6-a801-16d39aac84d4 # MCAPS-Hybrid-sschofield
+  RESOURCE_GROUP: rg-allthevibes-prod
+  ACR_NAME: atvsiteacrba7e3331
+  CONTAINERAPP_NAME: ca-allthevibes
+  IMAGE_NAME: allthevibes-site
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build image in ACR
+        run: |
+          az acr build \
+            --registry "$ACR_NAME" \
+            --image "$IMAGE_NAME:${{ github.sha }}" \
+            --image "$IMAGE_NAME:latest" \
+            .
+
+      - name: Update Container App
+        run: |
+          az containerapp update \
+            --name "$CONTAINERAPP_NAME" \
+            --resource-group "$RESOURCE_GROUP" \
+            --image "$ACR_NAME.azurecr.io/$IMAGE_NAME:${{ github.sha }}"
+
+      - name: Output app URL
+        run: |
+          FQDN=$(az containerapp show \
+            --name "$CONTAINERAPP_NAME" \
+            --resource-group "$RESOURCE_GROUP" \
+            --query properties.configuration.ingress.fqdn -o tsv)
+          echo "Deployed: https://$FQDN" >> "$GITHUB_STEP_SUMMARY"

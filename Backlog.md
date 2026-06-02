@@ -59,6 +59,14 @@ Last updated: February 20, 2026
 
 ---
 
+## Completed (cleanup)
+
+- **Remove TechConnect event references** — Stripped TechConnect-specific event content from the site
+- **Remove topic-request feature** — Deleted the Discord-connected topic submission flow, the Supabase `topic_requests` integration, and the DSPy + Ollama topic-modeling service
+- **Recurring events link out** — Recurring events now point to [aka.ms/allthevibes](https://aka.ms/allthevibes)
+
+---
+
 ## In Progress
 
 ---
