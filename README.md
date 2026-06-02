@@ -2,7 +2,7 @@
 
 > A VS Code-themed community site for AI-assisted development—built entirely with AI-assisted development.
 
-[![Deployed on Vercel](https://img.shields.io/badge/Deployed%20on-Vercel-black?style=for-the-badge&logo=vercel)](https://v0-atv-site.vercel.app)
+[![Deployed on Azure Container Apps](https://img.shields.io/badge/Deployed%20on-Azure%20Container%20Apps-0078D4?style=for-the-badge&logo=microsoftazure)](https://ca-allthevibes.icygrass-85e1ec19.eastus2.azurecontainerapps.io)
 [![Built with v0](https://img.shields.io/badge/Built%20with-v0.app-black?style=for-the-badge)](https://v0.app/chat/vV4dxqgDVWY)
 [![Next.js](https://img.shields.io/badge/Next.js-16-black?style=for-the-badge&logo=next.js)](https://nextjs.org)
 [![React](https://img.shields.io/badge/React-19-61DAFB?style=for-the-badge&logo=react)](https://react.dev)
@@ -24,13 +24,13 @@ The site covers the emerging ecosystem of AI pair-programming tools:
 
 ## 🖼️ Screenshots
 
-| IDE Overview | Topics Page |
+| IDE Overview | Tab Navigation |
 |:---:|:---:|
-| ![IDE](public/screenshots/01-ide-overview.png) | ![Topics](public/screenshots/04-topics-page.png) |
+| ![IDE](public/screenshots/01-ide-overview.png) | ![Tabs](public/screenshots/03-tabs-view.png) |
 
-| Tab Navigation | Sidebar |
+| Sidebar | |
 |:---:|:---:|
-| ![Tabs](public/screenshots/03-tabs-view.png) | ![Sidebar](public/screenshots/02-sidebar-interaction.png) |
+| ![Sidebar](public/screenshots/02-sidebar-interaction.png) | |
 
 ## 🏗️ Architecture
 
@@ -45,8 +45,7 @@ The site covers the emerging ecosystem of AI pair-programming tools:
 │  │  │ Sidebar  │                            │   ChatPanel    │ ││
 │  │  │          │        EditorPane          │                │ ││
 │  │  │          │   (MarkdownSection,        │   (AI Chat)    │ ││
-│  │  │          │    EventCard,              │                │ ││
-│  │  │          │    CountdownWidget)        │                │ ││
+│  │  │          │    EventCard)              │                │ ││
 │  │  │          │                            │                │ ││
 │  │  ├──────────┴────────────────────────────┴────────────────┤ ││
 │  │  │                   TerminalStrip                         │ ││
@@ -64,7 +63,7 @@ The site covers the emerging ecosystem of AI pair-programming tools:
 | **Framework** | Next.js 16.0.10 with App Router |
 | **UI** | React 19.2.0 + Tailwind CSS 4.1.9 |
 | **Components** | shadcn/ui (new-york style) |
-| **Deployment** | Vercel + Docker |
+| **Deployment** | Azure Container Apps (Docker) |
 
 ## 🎯 Features
 
@@ -130,8 +129,7 @@ The app will be available at [http://localhost:3000](http://localhost:3000).
 │   │   └── ...more
 │   ├── editor/            # Content components
 │   │   ├── MarkdownSection
-│   │   ├── EventCard
-│   │   └── CountdownWidget
+│   │   └── EventCard
 │   └── os/                # Desktop metaphor
 │       ├── OSBackground
 │       ├── DesktopIcon
@@ -201,8 +199,9 @@ MIT — Use it, fork it, vibe with it.
 
 ## 🔗 Links
 
-- **Live Site**: [v0-atv-site.vercel.app](https://v0-atv-site.vercel.app)
+- **Live Site**: [ca-allthevibes.icygrass-85e1ec19.eastus2.azurecontainerapps.io](https://ca-allthevibes.icygrass-85e1ec19.eastus2.azurecontainerapps.io)
 - **Build with v0**: [v0.app Chat](https://v0.app/chat/vV4dxqgDVWY)
+- **Infrastructure**: see [infra/README.md](infra/README.md)
 
 ---
 
