@@ -2,6 +2,21 @@
 const nextConfig = {
   output: 'standalone',
   poweredByHeader: false,
+  // The maintainer form's server action talks to Azure Table Storage via
+  // @azure/data-tables + @azure/identity (DefaultAzureCredential / managed
+  // identity). These SDKs use dynamic requires that Next 16 + Turbopack's
+  // standalone file tracer does NOT reliably follow through pnpm's symlinked
+  // store, so they (and their @azure/core-*, msal-* transitive deps) were
+  // omitted from .next/standalone. At runtime the server action then threw
+  // ERR_MODULE_NOT_FOUND *before* its try/catch (HTTP 200 with an RSC error
+  // digest, no console.error, no status banner, nothing written to the table).
+  //
+  // serverExternalPackages declares them external CommonJS (do not bundle into
+  // the RSC/server output; require() them natively at runtime). The matching
+  // files are placed in the standalone node_modules by the Dockerfile, which
+  // installs this exact closure flat (see Dockerfile "azure-deps" stage) — a
+  // tracer-independent guarantee that the write path exists in the container.
+  serverExternalPackages: ['@azure/identity', '@azure/data-tables'],
   images: {
     unoptimized: true,
   },

@@ -20,9 +20,11 @@ const CACHE_TTL_SECONDS = 3600
 /**
  * Small, real, slash-free fallback list so the form still works when the GitHub
  * fetch fails/rate-limits or the org slug is wrong. Must never be empty (eng L2).
+ * These are real public repos in the All-The-Vibes org.
  */
 export const FALLBACK_REPOS: Repo[] = [
-  { name: 'v0-all-the-vibes-site', fullName: 'stephschofield/v0-all-the-vibes-site' },
+  { name: 'atv-platform', fullName: 'All-The-Vibes/atv-platform' },
+  { name: 'ATV-StarterKit', fullName: 'All-The-Vibes/ATV-StarterKit' },
 ]
 
 /** Map the GitHub `/orgs/{org}/repos` payload to our `Repo` shape, dropping junk. */
@@ -48,13 +50,33 @@ export async function fetchOrgRepos(org: string): Promise<Repo[]> {
     const res = await fetch(`https://api.github.com/orgs/${org}/repos?per_page=100&type=public`, {
       headers: { Accept: 'application/vnd.github+json' },
     })
-    if (!res.ok) return FALLBACK_REPOS
+    if (!res.ok) {
+      // Observability for the exact failure that hid bug #1: a wrong org slug
+      // 404s (or GitHub rate-limits with 403) and we silently degrade to the
+      // hardcoded fallback. Log it so the degradation is never invisible again.
+      console.warn(
+        `[repos] GitHub /orgs/${org}/repos returned ${res.status} ${res.statusText}; falling back to FALLBACK_REPOS`,
+      )
+      return FALLBACK_REPOS
+    }
     const repos = normalizeRepos(await res.json())
-    return repos.length > 0 ? repos : FALLBACK_REPOS
-  } catch {
+    if (repos.length === 0) {
+      console.warn(`[repos] GitHub /orgs/${org}/repos returned an empty list; falling back to FALLBACK_REPOS`)
+      return FALLBACK_REPOS
+    }
+    return repos
+  } catch (err) {
+    console.warn(
+      `[repos] GitHub /orgs/${org}/repos fetch threw (${err instanceof Error ? err.message : String(err)}); falling back to FALLBACK_REPOS`,
+    )
     return FALLBACK_REPOS
   }
 }
+
+/** Default org slug — the All The Vibes GitHub org. MUST be an ORG, not a user:
+ *  the picker calls GET /orgs/{slug}/repos, which 404s for a personal account and
+ *  then silently falls back to FALLBACK_REPOS (the "only one repo shows" bug). */
+export const DEFAULT_ORG = 'All-The-Vibes'
 
 /**
  * Cached org-repo accessor (explicit TTL via unstable_cache — M1).
@@ -62,7 +84,7 @@ export async function fetchOrgRepos(org: string): Promise<Repo[]> {
  */
 export const getOrgRepos = unstable_cache(
   async (): Promise<Repo[]> => {
-    const org = process.env.GITHUB_ORG || 'stephschofield'
+    const org = process.env.GITHUB_ORG || DEFAULT_ORG
     return fetchOrgRepos(org)
   },
   ['maintainer-org-repos'],
