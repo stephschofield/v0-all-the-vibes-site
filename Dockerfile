@@ -33,6 +33,23 @@ COPY . .
 RUN pnpm build
 
 # ============================================
+# Stage 2b: Azure SDK runtime closure (flat, self-contained)
+# ============================================
+# Next 16 + Turbopack's standalone tracer does not reliably bundle the
+# @azure/* SDKs (dynamic requires through pnpm's symlinked store), so the
+# maintainer form's Azure Table write path is MISSING from .next/standalone
+# and the server action throws ERR_MODULE_NOT_FOUND at runtime. Install the
+# exact runtime closure FLAT here (npm hoists to a self-contained, symlink-free
+# node_modules) and copy it into the standalone bundle in the runner stage.
+# Versions are pinned to match pnpm-lock.yaml; bump both together on upgrade.
+FROM node:20-alpine AS azure-deps
+WORKDIR /azure
+RUN npm init -y >/dev/null 2>&1 \
+ && npm install --omit=dev --no-audit --no-fund --loglevel=error \
+      @azure/identity@4.13.1 \
+      @azure/data-tables@13.3.2
+
+# ============================================
 # Stage 3: Production runner
 # ============================================
 FROM node:20-alpine AS runner
@@ -51,6 +68,11 @@ COPY --from=builder /app/public ./public
 # Copy standalone output
 COPY --from=builder --chown=nextjs:nodejs /app/.next/standalone ./
 COPY --from=builder --chown=nextjs:nodejs /app/.next/static ./.next/static
+
+# Overlay the flat Azure SDK closure into the standalone node_modules so the
+# maintainer form's server action can require('@azure/identity' | '@azure/data-tables')
+# at runtime (see Dockerfile "azure-deps" stage + next.config.mjs comment).
+COPY --from=azure-deps --chown=nextjs:nodejs /azure/node_modules ./node_modules
 
 # Switch to non-root user
 USER nextjs

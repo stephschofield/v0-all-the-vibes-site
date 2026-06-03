@@ -20,9 +20,11 @@ const CACHE_TTL_SECONDS = 3600
 /**
  * Small, real, slash-free fallback list so the form still works when the GitHub
  * fetch fails/rate-limits or the org slug is wrong. Must never be empty (eng L2).
+ * These are real public repos in the All-The-Vibes org.
  */
 export const FALLBACK_REPOS: Repo[] = [
-  { name: 'v0-all-the-vibes-site', fullName: 'stephschofield/v0-all-the-vibes-site' },
+  { name: 'atv-platform', fullName: 'All-The-Vibes/atv-platform' },
+  { name: 'ATV-StarterKit', fullName: 'All-The-Vibes/ATV-StarterKit' },
 ]
 
 /** Map the GitHub `/orgs/{org}/repos` payload to our `Repo` shape, dropping junk. */
@@ -56,13 +58,18 @@ export async function fetchOrgRepos(org: string): Promise<Repo[]> {
   }
 }
 
+/** Default org slug — the All The Vibes GitHub org. MUST be an ORG, not a user:
+ *  the picker calls GET /orgs/{slug}/repos, which 404s for a personal account and
+ *  then silently falls back to FALLBACK_REPOS (the "only one repo shows" bug). */
+export const DEFAULT_ORG = 'All-The-Vibes'
+
 /**
  * Cached org-repo accessor (explicit TTL via unstable_cache — M1).
  * Reads the org slug from GITHUB_ORG, defaulting to the All The Vibes org.
  */
 export const getOrgRepos = unstable_cache(
   async (): Promise<Repo[]> => {
-    const org = process.env.GITHUB_ORG || 'stephschofield'
+    const org = process.env.GITHUB_ORG || DEFAULT_ORG
     return fetchOrgRepos(org)
   },
   ['maintainer-org-repos'],

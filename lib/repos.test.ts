@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
-import { normalizeRepos, FALLBACK_REPOS, fetchOrgRepos, type Repo } from './repos'
+import { normalizeRepos, FALLBACK_REPOS, fetchOrgRepos, DEFAULT_ORG, type Repo } from './repos'
 
 describe('normalizeRepos', () => {
   it('maps the GitHub API shape to {name, fullName}', () => {
@@ -26,6 +26,18 @@ describe('normalizeRepos', () => {
   it('returns an empty array for non-array input', () => {
     expect(normalizeRepos(null as unknown as unknown[])).toEqual([])
     expect(normalizeRepos({} as unknown as unknown[])).toEqual([])
+  })
+})
+
+describe('DEFAULT_ORG', () => {
+  // Regression guard for the "only one repo shows" bug: the default MUST be the
+  // All-The-Vibes *org*, never a personal user (whose /orgs/{user}/repos 404s and
+  // silently degrades to FALLBACK_REPOS).
+  it('is the All-The-Vibes org slug', () => {
+    expect(DEFAULT_ORG).toBe('All-The-Vibes')
+  })
+  it('is never a known personal account', () => {
+    expect(DEFAULT_ORG).not.toBe('stephschofield')
   })
 })
 

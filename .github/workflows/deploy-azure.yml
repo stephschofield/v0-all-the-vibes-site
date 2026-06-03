@@ -26,7 +26,7 @@ env:
   # holds "Storage Table Data Contributor" on the storage account below.
   MAINTAINER_TABLE_ACCOUNT_URL: https://atvmaintainersba7e3331.table.core.windows.net
   RUNTIME_CLIENT_ID: 16505517-fc2e-40d1-adfa-78f534907e43        # id-allthevibes-runtime
-  GITHUB_ORG: stephschofield
+  GITHUB_ORG: All-The-Vibes
 
 jobs:
   build-and-deploy:
