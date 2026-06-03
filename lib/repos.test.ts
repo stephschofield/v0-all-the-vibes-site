@@ -87,3 +87,44 @@ describe('fetchOrgRepos (live fetch + fallback)', () => {
     expect(String(f.mock.calls[0][0])).toContain('/orgs/my-org/repos')
   })
 })
+
+describe('fetchOrgRepos observability (no silent swallow — santa round 1)', () => {
+  // The original "only one repo shows" bug was invisible precisely because the
+  // degraded path logged nothing. Every fallback branch MUST warn, naming the org.
+  const realFetch = globalThis.fetch
+  beforeEach(() => { vi.restoreAllMocks() })
+  afterEach(() => { globalThis.fetch = realFetch })
+
+  it('warns (with status + org) when GitHub returns a non-OK response', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: false, status: 404, statusText: 'Not Found', json: async () => ({}) }) as unknown as typeof fetch
+    await fetchOrgRepos('a-user-not-an-org')
+    expect(warn).toHaveBeenCalledOnce()
+    const msg = String(warn.mock.calls[0][0])
+    expect(msg).toContain('a-user-not-an-org')
+    expect(msg).toContain('404')
+  })
+
+  it('warns when fetch throws (network down)', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    globalThis.fetch = vi.fn().mockRejectedValue(new Error('ECONNREFUSED')) as unknown as typeof fetch
+    await fetchOrgRepos('org')
+    expect(warn).toHaveBeenCalledOnce()
+    expect(String(warn.mock.calls[0][0])).toContain('org')
+  })
+
+  it('warns when the org returns an empty repo list', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => [] }) as unknown as typeof fetch
+    await fetchOrgRepos('empty-org')
+    expect(warn).toHaveBeenCalledOnce()
+    expect(String(warn.mock.calls[0][0])).toContain('empty-org')
+  })
+
+  it('does NOT warn on the happy path (200 with repos)', async () => {
+    const warn = vi.spyOn(console, 'warn').mockImplementation(() => {})
+    globalThis.fetch = vi.fn().mockResolvedValue({ ok: true, json: async () => [{ name: 'r', full_name: 'o/r' }] }) as unknown as typeof fetch
+    await fetchOrgRepos('org')
+    expect(warn).not.toHaveBeenCalled()
+  })
+})

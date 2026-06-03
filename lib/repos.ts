@@ -50,10 +50,25 @@ export async function fetchOrgRepos(org: string): Promise<Repo[]> {
     const res = await fetch(`https://api.github.com/orgs/${org}/repos?per_page=100&type=public`, {
       headers: { Accept: 'application/vnd.github+json' },
     })
-    if (!res.ok) return FALLBACK_REPOS
+    if (!res.ok) {
+      // Observability for the exact failure that hid bug #1: a wrong org slug
+      // 404s (or GitHub rate-limits with 403) and we silently degrade to the
+      // hardcoded fallback. Log it so the degradation is never invisible again.
+      console.warn(
+        `[repos] GitHub /orgs/${org}/repos returned ${res.status} ${res.statusText}; falling back to FALLBACK_REPOS`,
+      )
+      return FALLBACK_REPOS
+    }
     const repos = normalizeRepos(await res.json())
-    return repos.length > 0 ? repos : FALLBACK_REPOS
-  } catch {
+    if (repos.length === 0) {
+      console.warn(`[repos] GitHub /orgs/${org}/repos returned an empty list; falling back to FALLBACK_REPOS`)
+      return FALLBACK_REPOS
+    }
+    return repos
+  } catch (err) {
+    console.warn(
+      `[repos] GitHub /orgs/${org}/repos fetch threw (${err instanceof Error ? err.message : String(err)}); falling back to FALLBACK_REPOS`,
+    )
     return FALLBACK_REPOS
   }
 }

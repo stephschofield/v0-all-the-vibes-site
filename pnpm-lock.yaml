@@ -17,10 +17,10 @@ importers:
   .:
     dependencies:
       '@azure/data-tables':
-        specifier: ^13.3.2
+        specifier: 13.3.2
         version: 13.3.2
       '@azure/identity':
-        specifier: ^4.13.1
+        specifier: 4.13.1
         version: 4.13.1
       '@hookform/resolvers':
         specifier: ^3.10.0

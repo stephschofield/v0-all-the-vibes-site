@@ -41,7 +41,11 @@ RUN pnpm build
 # and the server action throws ERR_MODULE_NOT_FOUND at runtime. Install the
 # exact runtime closure FLAT here (npm hoists to a self-contained, symlink-free
 # node_modules) and copy it into the standalone bundle in the runner stage.
-# Versions are pinned to match pnpm-lock.yaml; bump both together on upgrade.
+#
+# The two top-level versions below MUST match the exact (caret-free) versions in
+# package.json — they are the single source of truth; bump in both places on
+# upgrade. Transitive @azure/core-*/msal-* deps are resolved by npm here (not
+# from pnpm-lock.yaml), so keep the top-level pins exact to bound that drift.
 FROM node:20-alpine AS azure-deps
 WORKDIR /azure
 RUN npm init -y >/dev/null 2>&1 \
