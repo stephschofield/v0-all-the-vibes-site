@@ -17,3 +17,12 @@ export RUNTIME_RID="/subscriptions/ba7e3331-8922-4ac6-a801-16d39aac84d4/resource
 export ACR_LOGIN="atvsiteacrba7e3331.azurecr.io"
 export DEPLOY_CID="8a4a411b-4f52-4638-896b-b4103ced3d76"
 export DEPLOY_PID="92266ec6-b110-4fc3-b286-07431acc761c"
+export RUNTIME_CID="16505517-fc2e-40d1-adfa-78f534907e43"        # id-allthevibes-runtime clientId
+export RUNTIME_PID="426030ad-c8e0-48c0-84e0-8060032784d3"        # id-allthevibes-runtime principalId
+
+# --- Maintainer form: Azure Table Storage (AAD auth, no shared key) ---
+# This subscription's Azure Policy forbids shared-key auth, so the app uses the
+# runtime managed identity (Storage Table Data Contributor) via DefaultAzureCredential.
+export MAINTAINER_SA="atvmaintainersba7e3331"                     # StorageV2, Standard_LRS, eastus2
+export MAINTAINER_TABLE="MaintainerApplications"
+export MAINTAINER_TABLE_ACCOUNT_URL="https://atvmaintainersba7e3331.table.core.windows.net"

@@ -1,4 +1,5 @@
 import { TableClient } from '@azure/data-tables'
+import { DefaultAzureCredential } from '@azure/identity'
 
 /**
  * Azure Table Storage data module for maintainer applications.
@@ -48,17 +49,45 @@ export function deriveKeys(
 
 let _client: TableClient | null = null
 
+/**
+ * Build the Azure Table client. Two auth modes, in priority order:
+ *
+ *  1. **Azure AD (preferred)** — set MAINTAINER_TABLE_ACCOUNT_URL
+ *     (e.g. https://atvmaintainersba7e3331.table.core.windows.net). Auth via
+ *     DefaultAzureCredential: the Container App's user-assigned managed identity in
+ *     prod, or your `az login` creds locally. This is the ONLY mode that works on
+ *     storage accounts where Azure Policy forbids shared-key auth
+ *     (allowSharedKeyAccess=false) — which is the case for this subscription.
+ *
+ *  2. **Connection string (fallback)** — set MAINTAINER_TABLE_CONNECTION_STRING.
+ *     Shared-key auth; only usable on accounts that permit it. Kept for local
+ *     emulator (Azurite) and non-policy-bound environments.
+ *
+ * With managed identity there is NO secret to store or rotate — it matches the
+ * site's existing secretless OIDC/UAMI architecture (see infra/README.md).
+ */
 function getClient(): TableClient {
+  if (_client) return _client
+
+  const accountUrl = process.env.MAINTAINER_TABLE_ACCOUNT_URL
+  if (accountUrl) {
+    // AZURE_CLIENT_ID (the runtime UAMI's clientId) scopes DefaultAzureCredential to
+    // the right user-assigned identity when several are attached to the Container App.
+    const credential = new DefaultAzureCredential()
+    _client = new TableClient(accountUrl, TABLE_NAME, credential)
+    return _client
+  }
+
   const connectionString = process.env.MAINTAINER_TABLE_CONNECTION_STRING
-  if (!connectionString) {
-    throw new Error(
-      'Missing Azure Table connection string. Set MAINTAINER_TABLE_CONNECTION_STRING in .env.local',
-    )
-  }
-  if (!_client) {
+  if (connectionString) {
     _client = TableClient.fromConnectionString(connectionString, TABLE_NAME)
+    return _client
   }
-  return _client
+
+  throw new Error(
+    'Missing Azure Table config. Set MAINTAINER_TABLE_ACCOUNT_URL (AAD/managed identity, ' +
+      'preferred) or MAINTAINER_TABLE_CONNECTION_STRING (shared key) in .env.local',
+  )
 }
 
 /**

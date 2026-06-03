@@ -36,21 +36,25 @@ describe('deriveKeys (C1 PartitionKey slash / H3 case-fold)', () => {
   })
 })
 
-describe('insertApplication (M2 insert-or-409, missing-conn-string throw)', () => {
-  const ORIGINAL = process.env.MAINTAINER_TABLE_CONNECTION_STRING
+describe('insertApplication (M2 insert-or-409, missing-config throw)', () => {
+  const ORIGINAL_CONN = process.env.MAINTAINER_TABLE_CONNECTION_STRING
+  const ORIGINAL_URL = process.env.MAINTAINER_TABLE_ACCOUNT_URL
 
   beforeEach(() => {
     vi.resetModules()
+    delete process.env.MAINTAINER_TABLE_ACCOUNT_URL
     process.env.MAINTAINER_TABLE_CONNECTION_STRING =
       'DefaultEndpointsProtocol=https;AccountName=fake;AccountKey=Zm9v;EndpointSuffix=core.windows.net'
   })
   afterEach(() => {
-    process.env.MAINTAINER_TABLE_CONNECTION_STRING = ORIGINAL
+    process.env.MAINTAINER_TABLE_CONNECTION_STRING = ORIGINAL_CONN
+    process.env.MAINTAINER_TABLE_ACCOUNT_URL = ORIGINAL_URL
     vi.restoreAllMocks()
   })
 
-  it('throws a clear error when the connection string is missing', async () => {
+  it('throws a clear error when NO auth config is present', async () => {
     delete process.env.MAINTAINER_TABLE_CONNECTION_STRING
+    delete process.env.MAINTAINER_TABLE_ACCOUNT_URL
     vi.resetModules()
     const mod = await import('./maintainers-db')
     await expect(
@@ -60,7 +64,46 @@ describe('insertApplication (M2 insert-or-409, missing-conn-string throw)', () =
         githubUsername: 'ada-lovelace',
         repository: 'stephschofield/v0-all-the-vibes-site',
       }),
-    ).rejects.toThrow(/connection string/i)
+    ).rejects.toThrow(/Missing Azure Table config/i)
+  })
+
+  it('uses Azure AD (DefaultAzureCredential) when MAINTAINER_TABLE_ACCOUNT_URL is set', async () => {
+    delete process.env.MAINTAINER_TABLE_CONNECTION_STRING
+    process.env.MAINTAINER_TABLE_ACCOUNT_URL =
+      'https://atvmaintainersba7e3331.table.core.windows.net'
+    const createEntity = vi.fn().mockResolvedValue({})
+    // Regular function (not arrow) so `new TableClient(...)` has a [[Construct]] slot.
+    // Declare the ctor params so mock.calls is typed as a non-empty tuple.
+    const TableClientCtor = vi.fn(function (
+      this: Record<string, unknown>,
+      _url: string,
+      _table: string,
+      _credential: unknown,
+    ) {
+      this.createEntity = createEntity
+    })
+    const credentialCtor = vi.fn()
+    vi.doMock('@azure/data-tables', () => ({ TableClient: TableClientCtor }))
+    vi.doMock('@azure/identity', () => ({
+      DefaultAzureCredential: credentialCtor,
+    }))
+    vi.resetModules()
+    const mod = await import('./maintainers-db')
+    const res = await mod.insertApplication({
+      name: 'Ada Lovelace',
+      email: 'ada@microsoft.com',
+      githubUsername: 'Ada-Lovelace',
+      repository: 'stephschofield/v0-all-the-vibes-site',
+    })
+    expect(res).toEqual({ ok: true })
+    // Constructed the AAD client (url, table, credential) — NOT fromConnectionString.
+    expect(TableClientCtor).toHaveBeenCalledOnce()
+    expect(credentialCtor).toHaveBeenCalledOnce()
+    expect(TableClientCtor.mock.calls[0][0]).toBe(
+      'https://atvmaintainersba7e3331.table.core.windows.net',
+    )
+    expect(createEntity).toHaveBeenCalledOnce()
+    expect(createEntity.mock.calls[0][0].partitionKey).toBe('v0-all-the-vibes-site')
   })
 
   it('inserts an entity with the corrected keys (PartitionKey bare, RowKey lowercased)', async () => {

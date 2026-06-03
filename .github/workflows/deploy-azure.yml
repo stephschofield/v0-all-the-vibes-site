@@ -21,6 +21,12 @@ env:
   ACR_NAME: atvsiteacrba7e3331
   CONTAINERAPP_NAME: ca-allthevibes
   IMAGE_NAME: allthevibes-site
+  # Maintainer form → Azure Table Storage via the runtime managed identity (no secret).
+  # RUNTIME_CLIENT_ID scopes DefaultAzureCredential to id-allthevibes-runtime, which
+  # holds "Storage Table Data Contributor" on the storage account below.
+  MAINTAINER_TABLE_ACCOUNT_URL: https://atvmaintainersba7e3331.table.core.windows.net
+  RUNTIME_CLIENT_ID: 16505517-fc2e-40d1-adfa-78f534907e43        # id-allthevibes-runtime
+  GITHUB_ORG: stephschofield
 
 jobs:
   build-and-deploy:
@@ -49,7 +55,11 @@ jobs:
           az containerapp update \
             --name "$CONTAINERAPP_NAME" \
             --resource-group "$RESOURCE_GROUP" \
-            --image "$ACR_NAME.azurecr.io/$IMAGE_NAME:${{ github.sha }}"
+            --image "$ACR_NAME.azurecr.io/$IMAGE_NAME:${{ github.sha }}" \
+            --set-env-vars \
+              "MAINTAINER_TABLE_ACCOUNT_URL=$MAINTAINER_TABLE_ACCOUNT_URL" \
+              "AZURE_CLIENT_ID=$RUNTIME_CLIENT_ID" \
+              "GITHUB_ORG=$GITHUB_ORG"
 
       - name: Output app URL
         run: |
