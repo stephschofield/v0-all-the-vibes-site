@@ -6,6 +6,7 @@ import MarkdownSection from "../editor/MarkdownSection"
 import SimpleBrowser from "../editor/SimpleBrowser"
 import EventCard from "../editor/EventCard"
 import { CalendarEvent } from "@/types/event"
+import { MaintainerApplyForm } from "../MaintainerApplyForm"
 
 export default function EditorPane() {
   const { activeFile } = useIDE()
@@ -13,6 +14,11 @@ export default function EditorPane() {
   // Upcoming events gets special split layout
   if (activeFile === 'upcoming-events.js') {
     return <UpcomingEventsLayout />
+  }
+
+  // Maintainer application form gets its own form layout
+  if (activeFile === 'maintainers.md') {
+    return <MaintainerApplyLayout />
   }
 
   const lineCount = 45
@@ -54,6 +60,19 @@ export default function EditorPane() {
       <div className="flex-1 p-3 sm:p-6 overflow-auto ide-scrollable">
         {activeFile === 'welcome.md' && <WelcomeContent />}
         {activeFile === 'vibe-a-thon.py' && <PlaceholderContent filename={activeFile} />}
+      </div>
+    </div>
+  )
+}
+
+function MaintainerApplyLayout() {
+  return (
+    <div
+      className="flex flex-1 overflow-auto ide-scrollable"
+      style={{ background: 'var(--ide-bg)' }}
+    >
+      <div className="flex-1 p-4 sm:p-8 overflow-auto ide-scrollable">
+        <MaintainerApplyForm />
       </div>
     </div>
   )
