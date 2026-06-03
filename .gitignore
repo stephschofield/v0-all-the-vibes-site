@@ -6,6 +6,10 @@
 .pnp.js
 .yarn/install-state.gz
 package-lock.json
+# ...except the committed Azure runtime closure lockfile, which the Dockerfile
+# azure-deps stage installs with `npm ci` (pnpm is the root package manager, but
+# this flat npm closure is overlaid into .next/standalone — see Dockerfile).
+!/docker/azure-runtime/package-lock.json
 
 # testing
 /coverage

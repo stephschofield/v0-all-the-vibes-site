@@ -1,0 +1,13 @@
+{
+  "name": "atv-azure-runtime-closure",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Flat, reproducible runtime closure for the Azure SDKs that Next 16 + Turbopack's standalone tracer fails to bundle. Overlaid into .next/standalone/node_modules by the Dockerfile azure-deps stage. Top-level versions MUST match the root package.json; `overrides` force transitives that npm would otherwise float to the version pnpm resolved for the root build (keeps the runtime graph == the built/typechecked graph). Regenerate package-lock.json with `npm install --package-lock-only` in this dir on bump, then re-check transitives against pnpm-lock.yaml.",
+  "dependencies": {
+    "@azure/data-tables": "13.3.2",
+    "@azure/identity": "4.13.1"
+  },
+  "overrides": {
+    "semver": "7.7.3"
+  }
+}
