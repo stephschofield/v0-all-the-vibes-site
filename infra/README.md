@@ -153,7 +153,23 @@ the insert; see `lib/maintainers-db.ts`). You can still pre-create it explicitly
 az storage table create -n "$MAINTAINER_TABLE" --account-name "$MAINTAINER_SA" --auth-mode login
 ```
 
-Verify end-to-end after the fix:
+Verify end-to-end after the fix — use the repeatable harness (it is the executable
+RED→GREEN test for this whole section):
+
+```bash
+./infra/verify-maintainer-storage.sh
+# RED  (before the fix): network/data-plane checks FAIL with a network-rule block.
+# GREEN (after the fix):  all checks pass AND allowSharedKeyAccess stays false.
+# It uses AAD only (never shared key), writes a throwaway probe row to the
+# __healthcheck__ partition, reads it back, and deletes it. Exit 0 = GREEN.
+```
+
+> **PATH B note:** once storage stays `publicNetworkAccess=Disabled` and is reachable
+> only via a Private Endpoint inside the ACA VNet, this harness will (correctly) still
+> fail from an external operator host — the data plane is private. Under PATH B, verify
+> from INSIDE the app instead (see the in-app probe in the PATH B runbook).
+
+Or run the underlying checks manually:
 
 ```bash
 # From an allow-listed host (or after PATH A), this should succeed:
