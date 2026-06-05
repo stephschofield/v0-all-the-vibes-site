@@ -192,13 +192,49 @@ describe('insertApplication — self-heal a missing table (H2/DR)', () => {
     repository: 'stephschofield/v0-all-the-vibes-site',
   }
 
-  it('TableNotFound (404) on insert → creates the table (idempotent) and retries the insert, returning ok', async () => {
-    const notFound: Error & { statusCode?: number; code?: string } = new Error('table not found')
-    notFound.statusCode = 404
-    notFound.code = 'TableNotFound'
+  /**
+   * Build an error shaped like a REAL @azure/data-tables v13.3.2 RestError.
+   *
+   * Azure Table Storage error codes are surfaced NESTED at
+   * `response.parsedBody.odataError.code` — this is the exact field the SDK's own
+   * `handleTableAlreadyExists` reads (see @azure/data-tables errorHelpers.js). The
+   * top-level `.code` is `undefined` for this shape: @azure/core-client's
+   * deserializationPolicy sets `error.code = internalError.code` where
+   * `internalError` deserializes (via the `TableServiceError` mapper) to
+   * `{ odataError: { code } }`, so there is no top-level `.code`.
+   *
+   * The old tests set BOTH `statusCode` AND a top-level `code` — a shape Azure never
+   * emits — which gave false confidence and could not catch a regression around the
+   * nested contract. `odataCode` omitted ⇒ a 404 with no parseable error code at all.
+   */
+  function makeRestError(
+    statusCode: number,
+    odataCode?: string,
+  ): Error & {
+    name: string
+    statusCode: number
+    response: { parsedBody: { odataError?: { code: string; message: { value: string } } } }
+  } {
+    const err = new Error(odataCode ?? `HTTP ${statusCode}`) as Error & {
+      name: string
+      statusCode: number
+      response: { parsedBody: { odataError?: { code: string; message: { value: string } } } }
+    }
+    err.name = 'RestError'
+    err.statusCode = statusCode
+    // NOTE: top-level `err.code` is intentionally NOT set — faithful to production.
+    err.response = {
+      parsedBody: odataCode
+        ? { odataError: { code: odataCode, message: { value: odataCode } } }
+        : {},
+    }
+    return err
+  }
+
+  it('TableNotFound (nested odataError.code, 404) on insert → creates the table (idempotent) and retries, returning ok', async () => {
     const createEntity = vi
       .fn()
-      .mockRejectedValueOnce(notFound) // first insert: table is missing
+      .mockRejectedValueOnce(makeRestError(404, 'TableNotFound')) // first insert: table is missing
       .mockResolvedValueOnce({}) // retry insert after createTable: succeeds
     const createTable = vi.fn().mockResolvedValue(undefined)
     vi.doMock('@azure/data-tables', () => ({
@@ -213,15 +249,10 @@ describe('insertApplication — self-heal a missing table (H2/DR)', () => {
   })
 
   it('after auto-creating the table, a 409 on the retried insert maps to duplicate (not a throw)', async () => {
-    const notFound: Error & { statusCode?: number; code?: string } = new Error('no table')
-    notFound.statusCode = 404
-    notFound.code = 'TableNotFound'
-    const conflict: Error & { statusCode?: number } = new Error('exists')
-    conflict.statusCode = 409
     const createEntity = vi
       .fn()
-      .mockRejectedValueOnce(notFound)
-      .mockRejectedValueOnce(conflict)
+      .mockRejectedValueOnce(makeRestError(404, 'TableNotFound'))
+      .mockRejectedValueOnce(makeRestError(409, 'EntityAlreadyExists'))
     const createTable = vi.fn().mockResolvedValue(undefined)
     vi.doMock('@azure/data-tables', () => ({
       TableClient: { fromConnectionString: () => ({ createEntity, createTable }) },
@@ -234,33 +265,73 @@ describe('insertApplication — self-heal a missing table (H2/DR)', () => {
   })
 
   it('re-throws when createTable() itself fails after a TableNotFound (e.g. 403 — different root cause surfaces, not swallowed)', async () => {
-    const notFound: Error & { statusCode?: number; code?: string } = new Error('no table')
-    notFound.statusCode = 404
-    notFound.code = 'TableNotFound'
-    const forbidden: Error & { statusCode?: number } = new Error('forbidden creating table')
-    forbidden.statusCode = 403
-    const createEntity = vi.fn().mockRejectedValue(notFound)
-    const createTable = vi.fn().mockRejectedValue(forbidden)
+    const createEntity = vi.fn().mockRejectedValue(makeRestError(404, 'TableNotFound'))
+    const createTable = vi.fn().mockRejectedValue(makeRestError(403, 'AuthorizationFailure'))
     vi.doMock('@azure/data-tables', () => ({
       TableClient: { fromConnectionString: () => ({ createEntity, createTable }) },
     }))
     vi.resetModules()
     const mod = await import('./maintainers-db')
-    await expect(mod.insertApplication(APP)).rejects.toThrow(/forbidden creating table/)
+    await expect(mod.insertApplication(APP)).rejects.toThrow(/AuthorizationFailure/)
   })
 
-  it('does NOT attempt createTable for a plain 500 (only TableNotFound triggers the self-heal)', async () => {
-    const err: Error & { statusCode?: number } = new Error('boom 500')
-    err.statusCode = 500
-    const createEntity = vi.fn().mockRejectedValue(err)
+  it('does NOT attempt createTable for a plain 500 (only a missing table triggers the self-heal)', async () => {
+    const createEntity = vi.fn().mockRejectedValue(makeRestError(500, 'InternalError'))
     const createTable = vi.fn().mockResolvedValue(undefined)
     vi.doMock('@azure/data-tables', () => ({
       TableClient: { fromConnectionString: () => ({ createEntity, createTable }) },
     }))
     vi.resetModules()
     const mod = await import('./maintainers-db')
-    await expect(mod.insertApplication(APP)).rejects.toThrow(/boom 500/)
+    await expect(mod.insertApplication(APP)).rejects.toThrow(/InternalError/)
     expect(createTable).not.toHaveBeenCalled()
     expect(createEntity).toHaveBeenCalledOnce()
+  })
+
+  it('does NOT self-heal on a 404 whose code is NOT TableNotFound (e.g. a stray ResourceNotFound) — no misfire', async () => {
+    // A 404 from an unrelated cause must NOT trigger a state-changing createTable()
+    // and must surface the original error rather than a follow-up createTable/retry error.
+    const createEntity = vi.fn().mockRejectedValue(makeRestError(404, 'ResourceNotFound'))
+    const createTable = vi.fn().mockResolvedValue(undefined)
+    vi.doMock('@azure/data-tables', () => ({
+      TableClient: { fromConnectionString: () => ({ createEntity, createTable }) },
+    }))
+    vi.resetModules()
+    const mod = await import('./maintainers-db')
+    await expect(mod.insertApplication(APP)).rejects.toThrow(/ResourceNotFound/)
+    expect(createTable).not.toHaveBeenCalled()
+    expect(createEntity).toHaveBeenCalledOnce()
+  })
+
+  it('does NOT self-heal on a bare 404 with no parseable error code — requires an explicit TableNotFound', async () => {
+    const createEntity = vi.fn().mockRejectedValue(makeRestError(404)) // no odataError.code
+    const createTable = vi.fn().mockResolvedValue(undefined)
+    vi.doMock('@azure/data-tables', () => ({
+      TableClient: { fromConnectionString: () => ({ createEntity, createTable }) },
+    }))
+    vi.resetModules()
+    const mod = await import('./maintainers-db')
+    await expect(mod.insertApplication(APP)).rejects.toThrow(/HTTP 404/)
+    expect(createTable).not.toHaveBeenCalled()
+    expect(createEntity).toHaveBeenCalledOnce()
+  })
+
+  it('self-heals when ONLY the nested odataError.code is present (no top-level code) — locks the real prod contract', async () => {
+    // Proves the feature works on the exact shape production emits: statusCode + nested
+    // odataError.code, with NO top-level .code. If someone "simplifies" detection back to
+    // a top-level `err.code` check, this test goes red.
+    const createEntity = vi
+      .fn()
+      .mockRejectedValueOnce(makeRestError(404, 'TableNotFound'))
+      .mockResolvedValueOnce({})
+    const createTable = vi.fn().mockResolvedValue(undefined)
+    vi.doMock('@azure/data-tables', () => ({
+      TableClient: { fromConnectionString: () => ({ createEntity, createTable }) },
+    }))
+    vi.resetModules()
+    const mod = await import('./maintainers-db')
+    const res = await mod.insertApplication(APP)
+    expect(res).toEqual({ ok: true })
+    expect(createTable).toHaveBeenCalledOnce()
   })
 })

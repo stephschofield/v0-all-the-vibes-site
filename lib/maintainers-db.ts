@@ -95,12 +95,13 @@ function getClient(): TableClient {
  * a duplicate (repo + lowercased user) throws 409, which we map to a friendly
  * `{ ok:false, duplicate:true }` instead of a generic error (M2). No separate pre-read.
  *
- * Self-heals a missing table: if the first insert fails with `TableNotFound` (404) —
+ * Self-heals a missing table: if the first insert fails with `TableNotFound` (a 404 whose
+ * service error code — nested at `response.parsedBody.odataError.code` — is `TableNotFound`)
  * the table was never provisioned (it is created out-of-band, not by CI, and the
  * provisioning `az storage table create` cannot run from a host blocked by the
  * account's network rules) — create the table (idempotent) and retry the insert ONCE.
- * Any other error (403/500/network) propagates so the real failure surfaces and is not
- * masked by the self-heal.
+ * Any other error (an unrelated 404, 403/500/network) propagates so the real failure
+ * surfaces and is not masked by the self-heal.
  */
 export async function insertApplication(
   input: MaintainerApplicationInput,
@@ -143,22 +144,45 @@ export async function insertApplication(
 }
 
 function isConflict(err: unknown): boolean {
-  if (typeof err !== 'object' || err === null) return false
-  const e = err as { statusCode?: number; code?: string; message?: string }
-  return (
-    e.statusCode === 409 ||
-    e.code === 'EntityAlreadyExists' ||
-    e.code === 'TableEntityAlreadyExists'
-  )
+  if (azureStatusCode(err) === 409) return true
+  const code = azureErrorCode(err)
+  return code === 'EntityAlreadyExists' || code === 'TableEntityAlreadyExists'
+}
+
+/**
+ * Read an Azure Table Storage error code from wherever the SDK actually puts it.
+ *
+ * `@azure/data-tables` surfaces the service error code NESTED at
+ * `error.response.parsedBody.odataError.code` — this is the exact field the SDK's own
+ * `handleTableAlreadyExists` reads. The top-level `error.code` is `undefined` for this
+ * shape: `@azure/core-client`'s deserializationPolicy sets `error.code = internalError.code`
+ * where `internalError` is the deserialized `TableServiceError` (`{ odataError: { code } }`),
+ * which has no top-level `code`. We still check a top-level `code` first to stay compatible
+ * with the local Azurite emulator and any future/variant error shapes that expose it there.
+ */
+function azureErrorCode(err: unknown): string | undefined {
+  if (typeof err !== 'object' || err === null) return undefined
+  const e = err as {
+    code?: string
+    response?: { parsedBody?: { odataError?: { code?: string } } }
+  }
+  return e.code ?? e.response?.parsedBody?.odataError?.code
+}
+
+function azureStatusCode(err: unknown): number | undefined {
+  if (typeof err !== 'object' || err === null) return undefined
+  return (err as { statusCode?: number }).statusCode
 }
 
 /**
  * True when an Azure Table error means "the table does not exist" — the signal to
- * self-provision it and retry. Azure returns 404 with code `TableNotFound`; we also
- * accept `ResourceNotFound` defensively (older/variant error shapes).
+ * self-provision it and retry. The real prod error is a 404 whose code (nested under
+ * `response.parsedBody.odataError.code`) is `TableNotFound`. We require that explicit
+ * code rather than blindly self-healing on ANY 404: an unrelated 404 must NOT trigger a
+ * state-changing `createTable()` + retry that would then mask the original error.
+ * `ResourceNotFound` is intentionally NOT treated as a missing table — it signals a
+ * missing entity/resource on other calls, not a missing table.
  */
 function isTableNotFound(err: unknown): boolean {
-  if (typeof err !== 'object' || err === null) return false
-  const e = err as { statusCode?: number; code?: string }
-  return e.code === 'TableNotFound' || e.code === 'ResourceNotFound' || e.statusCode === 404
+  return azureStatusCode(err) === 404 && azureErrorCode(err) === 'TableNotFound'
 }

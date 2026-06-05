@@ -120,10 +120,15 @@ az storage account show -n "$MAINTAINER_SA" -g "$RG" \
 ```bash
 source infra/azure-vars.sh
 
-# PATH A (simplest, recommended here): re-enable the public table endpoint, keep
-# shared-key auth OFF (AAD-only). The data plane still requires the managed-identity
-# RBAC role, so this is not "open to the world" for writes — it only restores the
-# network route the app needs. Shared-key stays policy-disabled.
+# PATH A (fastest unblock — treat as a TEMPORARY/emergency posture, not the steady state):
+# re-enable the public table endpoint with shared-key auth OFF (AAD-only). The data plane
+# still requires the managed-identity RBAC role, so writes are not "open to the world" —
+# BUT this removes the network boundary, leaving AAD/RBAC as the SOLE gate. That safety
+# rests entirely on the account keeping `allowSharedKeyAccess=false` (Azure Policy-enforced
+# on this subscription): if that policy is ever relaxed, the account becomes reachable for
+# shared-key attempts from the public internet. Verify it stays off:
+#   az storage account show -n "$MAINTAINER_SA" -g "$RG" --query allowSharedKeyAccess -o tsv  # must be false
+# Prefer PATH B for any durable configuration.
 az storage account update -n "$MAINTAINER_SA" -g "$RG" \
   --public-network-access Enabled --default-action Allow
 # (Optional hardening: --default-action Deny, then allow-list the ACA env egress IPs:
@@ -131,8 +136,8 @@ az storage account update -n "$MAINTAINER_SA" -g "$RG" \
 #    az storage account network-rule add -g "$RG" --account-name "$MAINTAINER_SA" --ip-address "$ip"; done
 #  NOTE: ACA outbound IPs are not contractually stable; prefer PATH B for a durable lock-down.)
 
-# PATH B (most secure, durable): keep public access Disabled and add a Private
-# Endpoint for the *table* sub-resource, reachable from a VNet the ACA env joins.
+# PATH B (most secure, durable — PREFERRED steady state): keep public access Disabled and
+# add a Private Endpoint for the *table* sub-resource, reachable from a VNet the ACA env joins.
 # Requires recreating the ACA env on an infrastructure subnet (managed env VNet
 # injection is set at creation time) — larger change; do this if policy forbids PATH A.
 #   az network private-endpoint create ... --group-id table ...
