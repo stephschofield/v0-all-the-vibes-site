@@ -111,7 +111,7 @@ az storage table create -n "$MAINTAINER_TABLE" --account-name "$MAINTAINER_SA" -
 # 4. Wire the Container App (the deploy workflow also sets these on every rollout)
 az containerapp update -g "$RG" -n "$ACA_APP" --set-env-vars \
   "MAINTAINER_TABLE_ACCOUNT_URL=$MAINTAINER_TABLE_ACCOUNT_URL" \
-  "AZURE_CLIENT_ID=$RUNTIME_CID" "GITHUB_ORG=stephschofield"
+  "AZURE_CLIENT_ID=$RUNTIME_CID" "GITHUB_ORG=All-The-Vibes"
 ```
 
 ## Decommissioning Vercel
