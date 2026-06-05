@@ -193,9 +193,10 @@ describe('insertApplication — self-heal a missing table (H2/DR)', () => {
   }
 
   /**
-   * Build an error shaped like a REAL @azure/data-tables v13.3.2 RestError.
+   * Build an error shaped like the REAL @azure/data-tables v13.3.2 RestError that
+   * Azure Table Storage emits in PRODUCTION.
    *
-   * Azure Table Storage error codes are surfaced NESTED at
+   * Against live Azure Table Storage the service error code is surfaced NESTED at
    * `response.parsedBody.odataError.code` — this is the exact field the SDK's own
    * `handleTableAlreadyExists` reads (see @azure/data-tables errorHelpers.js). The
    * top-level `.code` is `undefined` for this shape: @azure/core-client's
@@ -203,9 +204,12 @@ describe('insertApplication — self-heal a missing table (H2/DR)', () => {
    * `internalError` deserializes (via the `TableServiceError` mapper) to
    * `{ odataError: { code } }`, so there is no top-level `.code`.
    *
-   * The old tests set BOTH `statusCode` AND a top-level `code` — a shape Azure never
-   * emits — which gave false confidence and could not catch a regression around the
-   * nested contract. `odataCode` omitted ⇒ a 404 with no parseable error code at all.
+   * The old tests set BOTH `statusCode` AND a top-level `code` on every error — but the
+   * production Azure service path never populates the top-level `code`, so those tests
+   * gave false confidence and could not catch a regression around the nested contract.
+   * (A top-level `code` CAN appear against the local Azurite emulator / variant shapes;
+   * `azureErrorCode()` still honors it, and the dedicated "Azurite-style" test below
+   * locks that fallback branch.) `odataCode` omitted ⇒ a 404 with no parseable code.
    */
   function makeRestError(
     statusCode: number,
@@ -333,5 +337,26 @@ describe('insertApplication — self-heal a missing table (H2/DR)', () => {
     const res = await mod.insertApplication(APP)
     expect(res).toEqual({ ok: true })
     expect(createTable).toHaveBeenCalledOnce()
+  })
+
+  it('Azurite-style TableNotFound (top-level code, NO nested odataError) → self-heals — locks the emulator fallback branch', async () => {
+    // The local Azurite emulator / variant shapes expose the code at the TOP LEVEL
+    // (err.code) with no response.parsedBody.odataError. azureErrorCode() honors that
+    // fallback; this test pins it so a future "nested-only" refactor can't silently
+    // break local-emulator self-heal while the prod tests stay green.
+    const notFound = new Error('TableNotFound') as Error & { statusCode?: number; code?: string }
+    notFound.statusCode = 404
+    notFound.code = 'TableNotFound' // top-level only — no .response
+    const createEntity = vi.fn().mockRejectedValueOnce(notFound).mockResolvedValueOnce({})
+    const createTable = vi.fn().mockResolvedValue(undefined)
+    vi.doMock('@azure/data-tables', () => ({
+      TableClient: { fromConnectionString: () => ({ createEntity, createTable }) },
+    }))
+    vi.resetModules()
+    const mod = await import('./maintainers-db')
+    const res = await mod.insertApplication(APP)
+    expect(res).toEqual({ ok: true })
+    expect(createTable).toHaveBeenCalledOnce()
+    expect(createEntity).toHaveBeenCalledTimes(2)
   })
 })

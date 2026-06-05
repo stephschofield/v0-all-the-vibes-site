@@ -121,9 +121,10 @@ az storage account show -n "$MAINTAINER_SA" -g "$RG" \
 source infra/azure-vars.sh
 
 # PATH A (fastest unblock — treat as a TEMPORARY/emergency posture, not the steady state):
-# re-enable the public table endpoint with shared-key auth OFF (AAD-only). The data plane
-# still requires the managed-identity RBAC role, so writes are not "open to the world" —
-# BUT this removes the network boundary, leaving AAD/RBAC as the SOLE gate. That safety
+# re-enable public network access with shared-key auth OFF (AAD-only). NOTE: this reopens
+# the public endpoint for the WHOLE storage account (all services: blob/table/queue/file),
+# not just the table sub-resource. The data plane still requires the managed-identity RBAC
+# role, so writes are not "open to the world" — BUT this removes the network boundary, leaving AAD/RBAC as the SOLE gate. That safety
 # rests entirely on the account keeping `allowSharedKeyAccess=false` (Azure Policy-enforced
 # on this subscription): if that policy is ever relaxed, the account becomes reachable for
 # shared-key attempts from the public internet. Verify it stays off:
