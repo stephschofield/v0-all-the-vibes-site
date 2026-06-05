@@ -7,6 +7,13 @@
 #   - RED  (before operator fix): every data-plane step fails with a network-rule block.
 #   - GREEN (after PATH A in infra/README.md): all steps pass, AND shared-key stays OFF.
 #
+# ⚠️ UNDER PATH B (private endpoint — infra/PATH-B-private-endpoint-runbook.md) THIS SCRIPT
+#    MUST STAY RED FOREVER when run from an external/operator host. The table is reachable
+#    only from inside the ACA VNet, so an outside host cannot pass these checks. Do NOT
+#    "fix" a RED result by re-enabling public network access — that re-opens the exact hole
+#    PATH B closes (a GREEN here from outside = a public-exposure regression). Under PATH B,
+#    verify GREEN from INSIDE the app via the /api/health/storage probe instead.
+#
 # It uses AAD (--auth-mode login) exclusively — never shared key — matching the app's
 # DefaultAzureCredential path. Safe to re-run: it writes a clearly-marked probe row to a
 # throwaway partition and deletes it; it never touches real application rows.

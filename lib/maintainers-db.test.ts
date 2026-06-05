@@ -375,3 +375,172 @@ describe('insertApplication — self-heal a missing table (H2/DR)', () => {
     expect(createEntity).toHaveBeenCalledTimes(2)
   })
 })
+
+describe('checkStorageHealth — in-VNet probe for the PATH B private-endpoint path', () => {
+  const ORIGINAL_CONN = process.env.MAINTAINER_TABLE_CONNECTION_STRING
+  const ORIGINAL_URL = process.env.MAINTAINER_TABLE_ACCOUNT_URL
+
+  beforeEach(() => {
+    vi.resetModules()
+    delete process.env.MAINTAINER_TABLE_ACCOUNT_URL
+    process.env.MAINTAINER_TABLE_CONNECTION_STRING =
+      'DefaultEndpointsProtocol=https;AccountName=fake;AccountKey=Zm9v;EndpointSuffix=core.windows.net'
+  })
+  afterEach(() => {
+    process.env.MAINTAINER_TABLE_CONNECTION_STRING = ORIGINAL_CONN
+    process.env.MAINTAINER_TABLE_ACCOUNT_URL = ORIGINAL_URL
+    vi.restoreAllMocks()
+  })
+
+  function mockClient(impl: Record<string, unknown>) {
+    vi.doMock('@azure/data-tables', () => ({
+      TableClient: { fromConnectionString: () => impl },
+    }))
+  }
+
+  it('GREEN: a full write→read→delete round-trip returns { ok:true, stage:"roundtrip" } with latencyMs', async () => {
+    const createTable = vi.fn().mockResolvedValue(undefined)
+    const createEntity = vi.fn().mockResolvedValue({})
+    const getEntity = vi.fn().mockResolvedValue({ partitionKey: '__healthcheck__', rowKey: 'x' })
+    const deleteEntity = vi.fn().mockResolvedValue({})
+    mockClient({ createTable, createEntity, getEntity, deleteEntity })
+    vi.resetModules()
+    const mod = await import('./maintainers-db')
+    const res = await mod.checkStorageHealth()
+    expect(res.ok).toBe(true)
+    expect(res.stage).toBe('roundtrip')
+    expect(typeof res.latencyMs).toBe('number')
+    // The probe must clean up after itself — no orphaned health rows.
+    expect(createEntity).toHaveBeenCalledOnce()
+    expect(getEntity).toHaveBeenCalledOnce()
+    expect(deleteEntity).toHaveBeenCalledOnce()
+    // Probe row lands in the throwaway health partition, never a real application key.
+    expect(createEntity.mock.calls[0][0].partitionKey).toBe('__healthcheck__')
+  })
+
+  it('never throws — a DNS failure (ENOTFOUND) is classified, not propagated', async () => {
+    const dnsErr = Object.assign(new Error('getaddrinfo ENOTFOUND'), { code: 'ENOTFOUND' })
+    mockClient({ createEntity: vi.fn().mockRejectedValue(dnsErr), createTable: vi.fn() })
+    vi.resetModules()
+    const mod = await import('./maintainers-db')
+    const res = await mod.checkStorageHealth()
+    if (res.ok) throw new Error('expected probe to fail')
+    expect(res.class).toBe('dns')
+  })
+
+  it('classifies a blocked network egress (ETIMEDOUT) as network-egress-blocked', async () => {
+    const netErr = Object.assign(new Error('connect ETIMEDOUT'), { code: 'ETIMEDOUT' })
+    mockClient({ createEntity: vi.fn().mockRejectedValue(netErr), createTable: vi.fn() })
+    vi.resetModules()
+    const mod = await import('./maintainers-db')
+    const res = await mod.checkStorageHealth()
+    if (res.ok) throw new Error('expected probe to fail')
+    expect(res.class).toBe('network-egress-blocked')
+  })
+
+  it('classifies a 403 (public access disabled / authz) as authz-or-public-blocked', async () => {
+    const forbidden = Object.assign(new Error('public access disabled'), { statusCode: 403 })
+    mockClient({ createTable: vi.fn().mockResolvedValue(undefined), createEntity: vi.fn().mockRejectedValue(forbidden) })
+    vi.resetModules()
+    const mod = await import('./maintainers-db')
+    const res = await mod.checkStorageHealth()
+    if (res.ok) throw new Error('expected probe to fail')
+    expect(res.class).toBe('authz-or-public-blocked')
+    expect(res.status).toBe(403)
+  })
+
+  it('classifies a 401 (no/!valid token) as auth-token', async () => {
+    const unauth = Object.assign(new Error('no token'), { statusCode: 401 })
+    mockClient({ createTable: vi.fn().mockResolvedValue(undefined), createEntity: vi.fn().mockRejectedValue(unauth) })
+    vi.resetModules()
+    const mod = await import('./maintainers-db')
+    const res = await mod.checkStorageHealth()
+    if (res.ok) throw new Error('expected probe to fail')
+    expect(res.class).toBe('auth-token')
+  })
+
+  it('does not leak secrets — the result never contains the account URL, connection string, or token', async () => {
+    process.env.MAINTAINER_TABLE_ACCOUNT_URL = 'https://atvmaintainersba7e3331.table.core.windows.net'
+    delete process.env.MAINTAINER_TABLE_CONNECTION_STRING
+    const forbidden = Object.assign(new Error('AuthorizationFailure'), { statusCode: 403 })
+    // AAD path: TableClient ctor + DefaultAzureCredential
+    const TableClientCtor = vi.fn(function (this: Record<string, unknown>) {
+      this.createTable = vi.fn().mockResolvedValue(undefined)
+      this.createEntity = vi.fn().mockRejectedValue(forbidden)
+    })
+    vi.doMock('@azure/data-tables', () => ({ TableClient: TableClientCtor }))
+    vi.doMock('@azure/identity', () => ({ DefaultAzureCredential: vi.fn() }))
+    vi.resetModules()
+    const mod = await import('./maintainers-db')
+    const res = await mod.checkStorageHealth()
+    const serialized = JSON.stringify(res)
+    expect(serialized).not.toContain('atvmaintainersba7e3331')
+    expect(serialized).not.toContain('AccountKey')
+    // The RestError.message must not leak through either — only the coarse class/status do.
+    expect(serialized).not.toContain('AuthorizationFailure')
+    expect(res.ok).toBe(false)
+  })
+
+  it('classifies a post-self-heal table-missing (404 TableNotFound that persists) as table-missing', async () => {
+    // createTable "succeeds" but the retried insert still 404s — the self-heal can't help,
+    // so the probe reports table-missing rather than masking it.
+    const notFound = new Error('TableNotFound') as Error & { statusCode?: number; code?: string }
+    notFound.statusCode = 404
+    notFound.code = 'TableNotFound'
+    mockClient({
+      createEntity: vi.fn().mockRejectedValue(notFound), // always 404
+      createTable: vi.fn().mockResolvedValue(undefined),
+    })
+    vi.resetModules()
+    const mod = await import('./maintainers-db')
+    const res = await mod.checkStorageHealth()
+    if (res.ok) throw new Error('expected probe to fail')
+    expect(res.class).toBe('table-missing')
+  })
+
+  it('classifies an unrecognized failure (plain 500) as unknown', async () => {
+    const boom = Object.assign(new Error('internal'), { statusCode: 500 })
+    mockClient({ createEntity: vi.fn().mockRejectedValue(boom), createTable: vi.fn() })
+    vi.resetModules()
+    const mod = await import('./maintainers-db')
+    const res = await mod.checkStorageHealth()
+    if (res.ok) throw new Error('expected probe to fail')
+    expect(res.class).toBe('unknown')
+    expect(res.status).toBe(500)
+  })
+
+  it("exercises the probe's OWN self-heal (first insert 404 → createTable → retry → GREEN)", async () => {
+    const notFound = new Error('TableNotFound') as Error & { statusCode?: number; code?: string }
+    notFound.statusCode = 404
+    notFound.code = 'TableNotFound'
+    const createEntity = vi.fn().mockRejectedValueOnce(notFound).mockResolvedValueOnce({})
+    const createTable = vi.fn().mockResolvedValue(undefined)
+    const getEntity = vi.fn().mockResolvedValue({ partitionKey: '__healthcheck__', rowKey: 'x' })
+    const deleteEntity = vi.fn().mockResolvedValue({})
+    mockClient({ createEntity, createTable, getEntity, deleteEntity })
+    vi.resetModules()
+    const mod = await import('./maintainers-db')
+    const res = await mod.checkStorageHealth()
+    expect(res.ok).toBe(true)
+    expect(createTable).toHaveBeenCalledOnce()
+    expect(createEntity).toHaveBeenCalledTimes(2)
+  })
+
+  it('cleans up the probe row even when read-back fails mid-round-trip (no orphan)', async () => {
+    // write succeeds, getEntity throws — the finally block must still delete the row.
+    const readErr = Object.assign(new Error('read blew up'), { statusCode: 500 })
+    const createEntity = vi.fn().mockResolvedValue({})
+    const getEntity = vi.fn().mockRejectedValue(readErr)
+    const deleteEntity = vi.fn().mockResolvedValue({})
+    mockClient({ createEntity, createTable: vi.fn(), getEntity, deleteEntity })
+    vi.resetModules()
+    const mod = await import('./maintainers-db')
+    const res = await mod.checkStorageHealth()
+    if (res.ok) throw new Error('expected probe to fail')
+    expect(res.class).toBe('unknown')
+    // best-effort cleanup ran despite the read failure → no orphan probe row
+    expect(deleteEntity).toHaveBeenCalledOnce()
+    expect(deleteEntity.mock.calls[0]).toEqual(['__healthcheck__', expect.stringMatching(/^probe-/)])
+  })
+})
+

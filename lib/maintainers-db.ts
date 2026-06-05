@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto'
 import { TableClient } from '@azure/data-tables'
 import { DefaultAzureCredential } from '@azure/identity'
 
@@ -140,6 +141,108 @@ export async function insertApplication(
       }
     }
     throw err
+  }
+}
+
+/** Result of a storage-path health probe. Never contains secrets (no URL, key, or token). */
+export type StorageHealthFailureClass =
+  | 'dns'
+  | 'network-egress-blocked'
+  | 'authz-or-public-blocked'
+  | 'auth-token'
+  | 'table-missing'
+  | 'unknown'
+
+export type StorageHealthResult =
+  | { ok: true; stage: 'roundtrip'; latencyMs: number }
+  | {
+      ok: false
+      stage: 'roundtrip'
+      class: StorageHealthFailureClass
+      status?: number
+      latencyMs: number
+    }
+
+/** The throwaway partition health-probe rows live in — never a real application key. */
+const HEALTH_PARTITION = '__healthcheck__'
+
+/**
+ * Bucket a thrown Azure/SDK error into a coarse failure class for the health probe.
+ * The point is to tell WHICH wall a request hit — DNS vs network egress vs auth vs
+ * public-access-block — without surfacing any error detail that could contain secrets.
+ */
+function classifyStorageError(err: unknown): StorageHealthFailureClass {
+  const code = azureErrorCode(err)
+  const status = azureStatusCode(err)
+  if (code === 'ENOTFOUND' || code === 'EAI_AGAIN') return 'dns'
+  if (code === 'ETIMEDOUT' || code === 'ECONNREFUSED' || code === 'ECONNRESET') {
+    return 'network-egress-blocked'
+  }
+  if (status === 403) return 'authz-or-public-blocked'
+  if (status === 401) return 'auth-token'
+  if (isTableNotFound(err)) return 'table-missing'
+  return 'unknown'
+}
+
+/**
+ * In-VNet health probe for the maintainer storage data path. Performs the SAME
+ * AAD-authenticated table round-trip the form uses (insert with self-heal → read →
+ * delete) against a throwaway `__healthcheck__` partition, then cleans up.
+ *
+ * Built for the PATH B private-endpoint verification (see
+ * infra/PATH-B-private-endpoint-runbook.md): under PATH B the storage table is reachable
+ * only from INSIDE the ACA VNet, so an external host cannot verify it — but a route that
+ * calls this from the deployed app can. It NEVER throws and NEVER returns secrets (no
+ * account URL, connection string, or token): only `ok`, a coarse failure `class`, an
+ * optional HTTP `status`, and a latency number. The calling route is responsible for
+ * auth-gating and shaping the HTTP response.
+ */
+export async function checkStorageHealth(): Promise<StorageHealthResult> {
+  const startedAt = Date.now()
+  // randomUUID (not Date.now()) so two probes in the same millisecond can't collide
+  // into a spurious 409 that would be misreported as a failure.
+  const rowKey = `probe-${randomUUID()}`
+  const entity = { partitionKey: HEALTH_PARTITION, rowKey, probe: true }
+  let wrote = false
+
+  try {
+    const client = getClient()
+    // Mirror the app's self-heal so a missing table is provisioned, not a false failure.
+    try {
+      await client.createEntity(entity)
+    } catch (err) {
+      if (isTableNotFound(err)) {
+        await client.createTable()
+        await client.createEntity(entity)
+      } else {
+        throw err
+      }
+    }
+    wrote = true
+    await client.getEntity(HEALTH_PARTITION, rowKey)
+    await client.deleteEntity(HEALTH_PARTITION, rowKey)
+    wrote = false // deleted on the happy path; nothing for finally to clean up
+    return { ok: true, stage: 'roundtrip', latencyMs: Date.now() - startedAt }
+  } catch (err) {
+    const status = azureStatusCode(err)
+    return {
+      ok: false,
+      stage: 'roundtrip',
+      class: classifyStorageError(err),
+      ...(status === undefined ? {} : { status }),
+      latencyMs: Date.now() - startedAt,
+    }
+  } finally {
+    // Best-effort cleanup: if the row was written but a later step (read/delete) threw,
+    // don't leave an orphan probe row behind. Swallow errors — cleanup must never change
+    // the probe's verdict or throw out of the function.
+    if (wrote) {
+      try {
+        await getClient().deleteEntity(HEALTH_PARTITION, rowKey)
+      } catch {
+        // orphan row in the throwaway __healthcheck__ partition; harmless
+      }
+    }
   }
 }
 
