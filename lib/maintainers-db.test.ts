@@ -279,6 +279,21 @@ describe('insertApplication — self-heal a missing table (H2/DR)', () => {
     await expect(mod.insertApplication(APP)).rejects.toThrow(/AuthorizationFailure/)
   })
 
+  it('retries the insert EXACTLY once — a second TableNotFound after createTable() propagates (no retry loop)', async () => {
+    // Guards the bounded-retry contract: if createTable() "succeeds" but the table is
+    // still missing on the retried insert, the 2nd 404 must bubble out, not loop forever.
+    const createEntity = vi.fn().mockRejectedValue(makeRestError(404, 'TableNotFound')) // ALWAYS 404
+    const createTable = vi.fn().mockResolvedValue(undefined)
+    vi.doMock('@azure/data-tables', () => ({
+      TableClient: { fromConnectionString: () => ({ createEntity, createTable }) },
+    }))
+    vi.resetModules()
+    const mod = await import('./maintainers-db')
+    await expect(mod.insertApplication(APP)).rejects.toThrow(/TableNotFound/)
+    expect(createTable).toHaveBeenCalledOnce() // self-heal attempted once
+    expect(createEntity).toHaveBeenCalledTimes(2) // original + exactly one retry, then stop
+  })
+
   it('does NOT attempt createTable for a plain 500 (only a missing table triggers the self-heal)', async () => {
     const createEntity = vi.fn().mockRejectedValue(makeRestError(500, 'InternalError'))
     const createTable = vi.fn().mockResolvedValue(undefined)
