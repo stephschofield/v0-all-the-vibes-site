@@ -168,3 +168,99 @@ describe('insertApplication (M2 insert-or-409, missing-config throw)', () => {
     ).rejects.toThrow(/boom/)
   })
 })
+
+describe('insertApplication — self-heal a missing table (H2/DR)', () => {
+  const ORIGINAL_CONN = process.env.MAINTAINER_TABLE_CONNECTION_STRING
+  const ORIGINAL_URL = process.env.MAINTAINER_TABLE_ACCOUNT_URL
+
+  beforeEach(() => {
+    vi.resetModules()
+    delete process.env.MAINTAINER_TABLE_ACCOUNT_URL
+    process.env.MAINTAINER_TABLE_CONNECTION_STRING =
+      'DefaultEndpointsProtocol=https;AccountName=fake;AccountKey=Zm9v;EndpointSuffix=core.windows.net'
+  })
+  afterEach(() => {
+    process.env.MAINTAINER_TABLE_CONNECTION_STRING = ORIGINAL_CONN
+    process.env.MAINTAINER_TABLE_ACCOUNT_URL = ORIGINAL_URL
+    vi.restoreAllMocks()
+  })
+
+  const APP = {
+    name: 'Ada',
+    email: 'ada@microsoft.com',
+    githubUsername: 'ada-lovelace',
+    repository: 'stephschofield/v0-all-the-vibes-site',
+  }
+
+  it('TableNotFound (404) on insert → creates the table (idempotent) and retries the insert, returning ok', async () => {
+    const notFound: Error & { statusCode?: number; code?: string } = new Error('table not found')
+    notFound.statusCode = 404
+    notFound.code = 'TableNotFound'
+    const createEntity = vi
+      .fn()
+      .mockRejectedValueOnce(notFound) // first insert: table is missing
+      .mockResolvedValueOnce({}) // retry insert after createTable: succeeds
+    const createTable = vi.fn().mockResolvedValue(undefined)
+    vi.doMock('@azure/data-tables', () => ({
+      TableClient: { fromConnectionString: () => ({ createEntity, createTable }) },
+    }))
+    vi.resetModules()
+    const mod = await import('./maintainers-db')
+    const res = await mod.insertApplication(APP)
+    expect(res).toEqual({ ok: true })
+    expect(createTable).toHaveBeenCalledOnce()
+    expect(createEntity).toHaveBeenCalledTimes(2)
+  })
+
+  it('after auto-creating the table, a 409 on the retried insert maps to duplicate (not a throw)', async () => {
+    const notFound: Error & { statusCode?: number; code?: string } = new Error('no table')
+    notFound.statusCode = 404
+    notFound.code = 'TableNotFound'
+    const conflict: Error & { statusCode?: number } = new Error('exists')
+    conflict.statusCode = 409
+    const createEntity = vi
+      .fn()
+      .mockRejectedValueOnce(notFound)
+      .mockRejectedValueOnce(conflict)
+    const createTable = vi.fn().mockResolvedValue(undefined)
+    vi.doMock('@azure/data-tables', () => ({
+      TableClient: { fromConnectionString: () => ({ createEntity, createTable }) },
+    }))
+    vi.resetModules()
+    const mod = await import('./maintainers-db')
+    const res = await mod.insertApplication(APP)
+    expect(res).toEqual({ ok: false, duplicate: true })
+    expect(createTable).toHaveBeenCalledOnce()
+  })
+
+  it('re-throws when createTable() itself fails after a TableNotFound (e.g. 403 — different root cause surfaces, not swallowed)', async () => {
+    const notFound: Error & { statusCode?: number; code?: string } = new Error('no table')
+    notFound.statusCode = 404
+    notFound.code = 'TableNotFound'
+    const forbidden: Error & { statusCode?: number } = new Error('forbidden creating table')
+    forbidden.statusCode = 403
+    const createEntity = vi.fn().mockRejectedValue(notFound)
+    const createTable = vi.fn().mockRejectedValue(forbidden)
+    vi.doMock('@azure/data-tables', () => ({
+      TableClient: { fromConnectionString: () => ({ createEntity, createTable }) },
+    }))
+    vi.resetModules()
+    const mod = await import('./maintainers-db')
+    await expect(mod.insertApplication(APP)).rejects.toThrow(/forbidden creating table/)
+  })
+
+  it('does NOT attempt createTable for a plain 500 (only TableNotFound triggers the self-heal)', async () => {
+    const err: Error & { statusCode?: number } = new Error('boom 500')
+    err.statusCode = 500
+    const createEntity = vi.fn().mockRejectedValue(err)
+    const createTable = vi.fn().mockResolvedValue(undefined)
+    vi.doMock('@azure/data-tables', () => ({
+      TableClient: { fromConnectionString: () => ({ createEntity, createTable }) },
+    }))
+    vi.resetModules()
+    const mod = await import('./maintainers-db')
+    await expect(mod.insertApplication(APP)).rejects.toThrow(/boom 500/)
+    expect(createTable).not.toHaveBeenCalled()
+    expect(createEntity).toHaveBeenCalledOnce()
+  })
+})

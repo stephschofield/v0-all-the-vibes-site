@@ -86,6 +86,76 @@ The app reads `MAINTAINER_TABLE_ACCOUNT_URL`
 `MAINTAINER_TABLE_CONNECTION_STRING` fallback exists only for the local Azurite
 emulator.
 
+### ⚠️ Known production failure: storage network access disabled (OPERATOR FIX REQUIRED)
+
+**Symptom:** the form returns *"Something went wrong saving your application.
+Please try again in a moment."* on every submit. Nothing is written to the table.
+
+**Root cause (confirmed on the live account, 2026-06-05):** the storage account has
+`publicNetworkAccess = Disabled` with **no** private endpoint and **no** VNet/IP
+allow-list, while the Container Apps environment `cae-allthevibes` is **not** on a
+VNet (it egresses from public IPs). The runtime identity and RBAC are correct
+(`id-allthevibes-runtime` holds *Storage Table Data Contributor*; `AZURE_CLIENT_ID`,
+`MAINTAINER_TABLE_ACCOUNT_URL`, `GITHUB_ORG` are all set on the active revision) — but
+the data-plane call is **network-blocked** before it can authenticate, so
+`createEntity()` rejects and the server action shows the generic banner. (The same
+block prevents `az storage table create` from running off a non-allow-listed host.)
+
+This is distinct from the earlier `ERR_MODULE_NOT_FOUND` bundling bug (PR #18): that
+one threw *before* the try/catch and showed **no** banner. Seeing the banner means the
+SDK loads and the write is attempted — the network is what's blocking it.
+
+```bash
+# Diagnose (read-only):
+source infra/azure-vars.sh
+az storage account show -n "$MAINTAINER_SA" -g "$RG" \
+  --query "{publicNetworkAccess:publicNetworkAccess, defaultAction:networkRuleSet.defaultAction, \
+            ipRules:networkRuleSet.ipRules, vnetRules:networkRuleSet.virtualNetworkRules, \
+            privateEndpoints:privateEndpointConnections}" -o jsonc
+# publicNetworkAccess=Disabled + empty rules + no private endpoint  → this is the bug.
+```
+
+**Fix — pick ONE path (operator action on Azure; cannot be done from app code):**
+
+```bash
+source infra/azure-vars.sh
+
+# PATH A (simplest, recommended here): re-enable the public table endpoint, keep
+# shared-key auth OFF (AAD-only). The data plane still requires the managed-identity
+# RBAC role, so this is not "open to the world" for writes — it only restores the
+# network route the app needs. Shared-key stays policy-disabled.
+az storage account update -n "$MAINTAINER_SA" -g "$RG" \
+  --public-network-access Enabled --default-action Allow
+# (Optional hardening: --default-action Deny, then allow-list the ACA env egress IPs:
+#  for ip in $(az containerapp env show -g "$RG" -n "$ACA_ENV" --query properties.staticIp -o tsv); do
+#    az storage account network-rule add -g "$RG" --account-name "$MAINTAINER_SA" --ip-address "$ip"; done
+#  NOTE: ACA outbound IPs are not contractually stable; prefer PATH B for a durable lock-down.)
+
+# PATH B (most secure, durable): keep public access Disabled and add a Private
+# Endpoint for the *table* sub-resource, reachable from a VNet the ACA env joins.
+# Requires recreating the ACA env on an infrastructure subnet (managed env VNet
+# injection is set at creation time) — larger change; do this if policy forbids PATH A.
+#   az network private-endpoint create ... --group-id table ...
+#   + private DNS zone privatelink.table.core.windows.net linked to the ACA VNet.
+```
+
+After the network path is open, the **table auto-provisions on first submit** — the
+app now self-heals a missing table (`createTable()` on `TableNotFound`, then retries
+the insert; see `lib/maintainers-db.ts`). You can still pre-create it explicitly:
+
+```bash
+az storage table create -n "$MAINTAINER_TABLE" --account-name "$MAINTAINER_SA" --auth-mode login
+```
+
+Verify end-to-end after the fix:
+
+```bash
+# From an allow-listed host (or after PATH A), this should succeed:
+az storage table list --account-name "$MAINTAINER_SA" --auth-mode login -o table
+# Then submit the form once and confirm a row lands:
+az storage entity query -t "$MAINTAINER_TABLE" --account-name "$MAINTAINER_SA" --auth-mode login -o table
+```
+
 ### Provisioning runbook (already applied; here for rebuild/DR)
 
 ```bash

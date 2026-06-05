@@ -94,6 +94,13 @@ function getClient(): TableClient {
  * Insert a maintainer application. Insert-only (`createEntity`) IS the atomic dedup:
  * a duplicate (repo + lowercased user) throws 409, which we map to a friendly
  * `{ ok:false, duplicate:true }` instead of a generic error (M2). No separate pre-read.
+ *
+ * Self-heals a missing table: if the first insert fails with `TableNotFound` (404) —
+ * the table was never provisioned (it is created out-of-band, not by CI, and the
+ * provisioning `az storage table create` cannot run from a host blocked by the
+ * account's network rules) — create the table (idempotent) and retry the insert ONCE.
+ * Any other error (403/500/network) propagates so the real failure surfaces and is not
+ * masked by the self-heal.
  */
 export async function insertApplication(
   input: MaintainerApplicationInput,
@@ -118,6 +125,19 @@ export async function insertApplication(
     if (isConflict(err)) {
       return { ok: false, duplicate: true }
     }
+    if (isTableNotFound(err)) {
+      // Table missing → create it (idempotent: no-op if it already exists) and retry once.
+      await client.createTable()
+      try {
+        await client.createEntity(entity)
+        return { ok: true }
+      } catch (retryErr) {
+        if (isConflict(retryErr)) {
+          return { ok: false, duplicate: true }
+        }
+        throw retryErr
+      }
+    }
     throw err
   }
 }
@@ -130,4 +150,15 @@ function isConflict(err: unknown): boolean {
     e.code === 'EntityAlreadyExists' ||
     e.code === 'TableEntityAlreadyExists'
   )
+}
+
+/**
+ * True when an Azure Table error means "the table does not exist" — the signal to
+ * self-provision it and retry. Azure returns 404 with code `TableNotFound`; we also
+ * accept `ResourceNotFound` defensively (older/variant error shapes).
+ */
+function isTableNotFound(err: unknown): boolean {
+  if (typeof err !== 'object' || err === null) return false
+  const e = err as { statusCode?: number; code?: string }
+  return e.code === 'TableNotFound' || e.code === 'ResourceNotFound' || e.statusCode === 404
 }
