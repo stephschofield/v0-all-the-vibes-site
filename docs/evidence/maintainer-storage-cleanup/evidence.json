@@ -1,0 +1,93 @@
+{
+  "scope": "V0-VERIFY-CLEANUP-001 only; not production or full-PR acceptance",
+  "source_commit": "385b3d07897bedee946c568aac424c01add4f46a",
+  "source_tree": "dc4122f90f05e1e292a88ac1bc9eb2f06dcf59db",
+  "previous_head": "8f24438d1c9025107963ba79d26ac4c94329f5b7",
+  "pr_base": "e7ff4a023dd206e0c1d6d3f0a8d20b1ae33e7b92",
+  "committed_source": [
+    {
+      "path": "infra/verify-maintainer-storage.sh",
+      "git_blob": "195c414e53671c47512fea3449ae1af0fc27adb6",
+      "sha256": "c9f89ac5df8b4843998ef538f78c297632b1ee765cbdb2e4a427e6af94d49d6c",
+      "bytes": 4759,
+      "committed_equals_tested_equals_worktree": true
+    },
+    {
+      "path": "infra/tests/test_verify_maintainer_storage.py",
+      "git_blob": "20760a7d0a154aa99603465856e5cb62534603a2",
+      "sha256": "ba257cdc07db812d7d2e147d44b9eda826f3b43f29231d8724ea7254337a8f29",
+      "bytes": 8317,
+      "committed_equals_tested_equals_worktree": true
+    }
+  ],
+  "test_bytes_identical_RED_GREEN": true,
+  "production_azure_vars_unchanged_and_never_executed": true,
+  "runs": [
+    {
+      "phase": "red",
+      "test_exit_code": 1,
+      "test_methods": 3,
+      "scenario_count": 10,
+      "passed_methods": 2,
+      "failed_methods": 1,
+      "cleanup_verifier_exit_code": 0,
+      "started_at_utc": "2026-09-27T23:23:59.0509776Z",
+      "completed_at_utc": "2026-09-27T23:24:04.9788887Z",
+      "source_hashes": {
+        "infra/verify-maintainer-storage.sh": "babcf00b1696ee52f93e67f0f69d222f7417fe95a23102339d6656a3ccb8d2c9",
+        "infra/tests/test_verify_maintainer_storage.py": "ba257cdc07db812d7d2e147d44b9eda826f3b43f29231d8724ea7254337a8f29",
+        "infra/azure-vars.sh": "e1a94cbc55053aedcbec2d0c31c986110a9220a5f804ebec81f88964f8ce7ab1"
+      },
+      "command": "/usr/local/bin/python3 -I -B /tmp/v0-storage-lane/infra/tests/test_verify_maintainer_storage.py",
+      "log": "red.log",
+      "log_sha256": "fa790084d1a93068d1d82255c6a2fc8e5f2adbec5a555c8073ddb4871eaa6495",
+      "source_configuration": "synthetic-azure-vars.sh.txt substituted only in isolated staged tree"
+    },
+    {
+      "phase": "green",
+      "test_exit_code": 0,
+      "test_methods": 3,
+      "scenario_count": 10,
+      "passed_methods": 3,
+      "failed_methods": 0,
+      "cleanup_verifier_exit_code": 1,
+      "started_at_utc": "2026-09-27T23:41:54.3704785Z",
+      "completed_at_utc": "2026-09-27T23:42:00.6586081Z",
+      "source_hashes": {
+        "infra/verify-maintainer-storage.sh": "c9f89ac5df8b4843998ef538f78c297632b1ee765cbdb2e4a427e6af94d49d6c",
+        "infra/tests/test_verify_maintainer_storage.py": "ba257cdc07db812d7d2e147d44b9eda826f3b43f29231d8724ea7254337a8f29",
+        "infra/azure-vars.sh": "e1a94cbc55053aedcbec2d0c31c986110a9220a5f804ebec81f88964f8ce7ab1"
+      },
+      "command": "/usr/local/bin/python3 -I -B /tmp/v0-storage-lane/infra/tests/test_verify_maintainer_storage.py",
+      "log": "green.log",
+      "log_sha256": "4410eba874f0972a9682e2f43bc7bcdece63229643742aff8fb460ca8300c5c2",
+      "source_configuration": "synthetic-azure-vars.sh.txt substituted only in isolated staged tree"
+    }
+  ],
+  "render": {
+    "path": "red-green-summary.png",
+    "sha256": "7908020a3bd22b126886cda19c69ce375be075bb8a20b54a549eb2030dee7f52",
+    "kind": "Offline summary rendered from genuine logs; not an application screenshot",
+    "both_RED_and_GREEN_scenarios_shown": true
+  },
+  "isolation": {
+    "image": "sha256:2325bb286ec344af3e5898cc224b5844e2707ac6e26b1632516fd3edc84a5e26",
+    "source_uid": 65534,
+    "test_uid": 65533,
+    "rootfs": "read-only",
+    "tmpfs": "nosuid,nodev,noexec; root-owned sticky1777",
+    "network": "none",
+    "host_mounts": [],
+    "capabilities": "ALL dropped",
+    "no_new_privileges": true,
+    "source_immutable": true,
+    "both_exact_containers_independently_confirmed_absent": true
+  },
+  "evidence_packaging_is_not_a_new_test_run": true,
+  "remaining_gates": [
+    "Fresh exact-candidate correction/evidence review before publication",
+    "Independent producer verification after publication",
+    "Every unrelated full-PR CI/security/review gate",
+    "Real Azure network/identity/storage production acceptance (not performed)"
+  ]
+}

@@ -1,0 +1,4 @@
+# SYNTHETIC TEST ONLY: no subscription, identity, credentials, or endpoints.
+MAINTAINER_SA=syntheticonlyv0
+RG=synthetic-only-rg
+MAINTAINER_TABLE=SyntheticOnlyMaintainerTable
