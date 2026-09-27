@@ -88,6 +88,7 @@ if az storage entity show --account-name "$MAINTAINER_SA" --auth-mode login \
     pass "probe entity cleaned up"
   else
     fail "probe cleanup failed (orphan row left in $PROBE_PK — harmless, delete manually)"
+    errors=$((errors + 1))
   fi
 else
   fail "probe entity read-back failed"
